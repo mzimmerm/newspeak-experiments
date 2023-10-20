@@ -1,0 +1,297 @@
+Newspeak3
+'Root'
+class SimpleBlog usingPlatform: platform 
+(* :exemplar: SimpleBlog usingPlatform: platform. *)
+(* Todos
+- rename contents to content (upper and lower)
+- Find an alternative to Date or find how to format Date to show like 2024/11/21
+- On Blog add slot #tocShort, #tocMedium, #tocLong
+- present postsTOC on the left, with Post slots (first tag, title, date) formatted as short/medium/long
+  - a postsTOC entry is not an object, just fields pulled from Post,
+  as many as we want for brevity or length: short: only title, medium: tag, title, date. long: tag, title, date, summary, summaryImage
+  - start with medium hardcoded
+  - how to present short/medium/long? On BlogPostPresenter, add definitionShort/Medium/Long??
+- add action selectPostInTOCAction (where? Presenter?) ability to click on postsTOC and present the selected Post
+----
+Rejected:
+1. - class ("values class") PostTOCEntry, nested in Post
+    - BlogModel, method postTOCEntries, list of Post>>TOCEntry (new class)
+2. 
+*)
+= (
+  |
+  (* module import slots *)
+  List ::= platform collections List.
+  Map  ::= platform collections Map.
+  Date ::= platform js global at: 'Date'.
+
+  (* module data slots *)
+  (* We set #defaultAuthor and #defaultTag to default, but later in SimpleBlogApp>>#main:args: , 
+        we want to update those defaults to some values specific to the SimpleBlog instance.
+      
+      These slots can be private or protected, as long as the update is in a public method on self
+        such as #defaultAuthor:defaultTag: .
+      The reason is: Visibility follows lexical context, so private #defaultAuthor slot defined here will be visible 
+        from #defaultAuthor:defaultTag:, as the code, #defaultAuthor:defaultTag:
+        is lexically inside this slot definition #SimpleBlog>>#usingPlatform: platform.  The fact that 
+        #defaultAuthor:defaultTag: is sitting in code of another class SimpleBlogApp#main:args:
+        is not relevant for visibility - it is the lexical scope of the declaration (source) of #defaultAuthor:defaultTag:
+        in relation to the accessed #defaultAuthor.
+      
+  *)
+  private defaultAuthor <Author> ::= Author firstName: 'Missing name' lastName: 'Missing name'.
+  private defaultTag <Tag> ::= 'no default tag'.
+  |
+  ) (
+public class Author firstName: firstName lastName: lastName = (
+    |      
+    firstName <String> = firstName.
+    lastName <String> = lastName.
+    |
+    ) (
+public printString = (
+      ^ firstName, ' ', lastName.
+    )
+) : (
+)
+public class Tag name: tagName = ( 
+    |
+    public name <String> = tagName.
+    |
+    ) (
+) : (
+)
+public class Post emptyWithDefaultMetadata = (
+    |      
+    public title <String>
+    public contents
+    public contentsSummary (* text summarizing contents *)
+    public contentsSummaryImage (* image summarizing contents *)
+    public author <Author>
+    public date <Date>
+    public tags <List> = List new.
+    |
+    author: defaultAuthor.
+    date:   Date new.
+    tags add: defaultTag.
+    ) (
+public updateTitle: title contents: contents = (
+      self title: title.
+      self contents: contents.
+    )
+public updateAuthor: author date: date tags: tags title: title contents: contents = (
+    self author:   author.
+    self date:     date.
+    self tags:     tags.
+    self title:    title.
+    self contents: contents.
+    )
+) : (
+)
+public class BlogUI usingPlatform: platform = (
+    |
+    Subject = platform hopscotch core Subject.
+    Presenter = platform hopscotch core Presenter.
+    
+    (* Contains possibly protected Fragments such as ButtonFragment *)
+    fragments = platform hopscotch fragments.
+    |
+    ) (
+public class BlogModel new = (
+      |
+      public blogTitle = 'Blog written by ', defaultAuthor printString.
+      public posts <List> = List new.
+      public selectedPost <Post>
+      |
+      ) (
+addPost: post <Post> = (
+        posts add: post.
+        (* Mark the added post as selected right away,
+        	so it displays in the TOC after updateGUI is called.
+            This is likely what we want to do most of the time (?).
+        *)
+        selectedPost:: post.
+        )
+) : (
+)
+public class BlogSubject onModel: model = Subject onModel: model (
+      ) (
+createPresenter = (
+    ^BlogPresenter onSubject: self.
+  )
+isKindOfBlogSubject = ( ^true. )
+displayFirstPostAction = (
+(* todo-00-last
+*)
+)
+selectPostInTOCAction = (
+(* todo-00-last
+*)
+)
+newPostAction = (
+(* todo-00-last
+*)
+)
+isMyKind: other = ( ^ other isKindOfBlogSubject. )
+) : (
+)
+public class BlogPresenter onSubject: subject 
+= Presenter onSubject: subject (
+	|public postEditorFragmentsHolder ::= nil.|
+	) (
+blogTitle = (
+        ^subject model blogTitle.
+      )
+isMyKind: other = ( ^other isKindOfBlogPresenter. )
+isKindOfBlogPresenter = ( ^true. )
+private tocFragments ^<List[Fragment]> = (
+	(* Creates and returns a list of fragments, each fragment presents TOC section for one Post.
+        Each fragment in the returned list is created by invoking #tocFragmentForPost:post.
+    *)
+    | tocFragments |
+    tocFragments: List new.
+    tocFragments add: (label: ' POSTS: ').
+        
+    subject model posts do: [ :post | tocFragments add: (tocFragmentForPost: post). ].
+    
+    ^tocFragments.
+)
+newPostEditorFragment = (
+	(*
+	Creates a new empty post, then creates and answers 
+    a fragment which is a functioning editor of new Post.
+	*)
+	|newPost|
+    newPost:: Post emptyWithDefaultMetadata
+                  updateTitle: 'New post ...' contents: 'Empty contents ...'.
+    ^postEditorFragmentFor: newPost.              
+)
+definition = (
+    ^ column: {
+      (* todo-00-last-last : Think of a good layout, and button (link?) placement for "new Post" *)
+      label: blogTitle .
+      row: {
+        column: tocFragments.
+        postEditorFragmentFor: subject model selectedPost.
+        
+        (* todo-00-last-done - label: selectedPostString. *)
+        }.
+    }.
+)
+private tocFragmentForPost: post = (
+	(*
+    Definition of a TOC item for the passed post.
+    A column with two rows, first row has a link with title from the passed post, 
+      second row has a label from the passed post tag.
+    *)
+	|model = subject model.|
+    
+	^column: {
+    
+		row: {
+        	label: 'Title: '. 
+            (link: post title printString 
+            action: [ 
+            	updateGUI: [
+                	(* nullify the editor (if another post is being edited, changes are lost) - then change to newly selected post. *)
+                	postEditorFragmentsHolder:: nil.
+                	model selectedPost: post.
+				]
+			]).
+            (* width: 0 elasticity: 1. *) 
+            (* todo does not work why? ; color: linkActionColor. *)
+        }.
+        
+        row: {
+        	label: 'Tag: '. 
+            label: (post tags at: 1) name printString. (* todo add firstTag or defaultTag message *)
+       }. 
+	}.
+)
+postEditorFragmentFor: post <Post> = (
+	(* todo-00 finish this
+	Preconditions:
+		- Assumes post exists, although post title and post contents may be empty or have a new post default 
+		  text such as 'Initial title ...'
+      
+	Represents the editor of an existing post. The post may be new, then it's slots are set to some initial values. 
+    Answers the editor which is a row fragment with:
+    	- a Save post button, the button's action replaces the old post title and contents 
+          with title and contents from the editor fields below
+        - a TextField (input) named title
+        - a TextField  (input) named contents
+    
+	Notes:
+		- Implementation of the 'Save post' button could use ButtonFragment.
+          But that is NOT public in ~HopscotchForHTML5~, only exposed via ~Presenter>>button:action:~  which answers ~Fragment~,
+            so we use ~Presenter>>button:action:~ to create the button.
+        - Implementation of the titleEditor and contentsEditor uses ~TextEditorFragment~ directly as it is public in ~HopscotchForHTML5~.
+          We import it via  ~BlogUI~ slot ~fragments = platform hopscotch fragments~
+	*)
+    (* todo-00-last
+    - If Holder titleEditor and contentsEditor is nil, set titleEditor and contentsEditor to  (fragments TextEditorFragment new text: 'Initial title ...'), 
+      otherwise set to holder titleEditor and holder contentsEditor
+    *)
+	
+	postEditorFragmentsHolder isNil ifTrue: [
+ 		postEditorFragmentsHolder:: PostEditorFragmentsHolder 
+        		saveButton: 
+            		(button: 'Save post'
+                	action: [
+                		updateGUI: [
+                        	(* Update post text from editor new values *)
+                            (*
+                            postEditorFragmentsHolder  titleEditor leaveEditState.
+                            postEditorFragmentsHolder contentsEditor leaveEditState.
+                            *)
+                            (* Clicking 'Save post' updates the post instance *)
+                			post 
+                    			(* pulling textBeingAccepted MUST BE PRECEDED WTIH leaveEditState, else Exception on createVisual: *)
+                    			updateTitle: postEditorFragmentsHolder titleEditor textBeingAccepted
+                        		contents: postEditorFragmentsHolder contentsEditor textBeingAccepted
+                    	]
+					])
+				(* Initial editors text are from the passed post *)
+				titleEditor: (fragments TextEditorFragment new text: post title)
+				contentsEditor:  (fragments TextEditorFragment new text: post contents)
+                .
+	] ifFalse: [
+    	(* always false - never gets here *)
+    	break.
+    ]
+    .
+	^ column: {
+    		postEditorFragmentsHolder saveButton.
+    		postEditorFragmentsHolder titleEditor.
+    		postEditorFragmentsHolder contentsEditor.          
+    		}.
+)
+) : (
+)
+) : (
+)
+public class PostEditorFragmentsHolder
+	saveButton: saveButton <ButtonFragment>
+	titleEditor: titleEditor <TextEditorFragment>
+    contentsEditor: contentsEditor <TextEditorFragment> = (
+    (*
+    Holder class for post editor fragments. todo-00 maybe move to Post or BlogUI?
+    *)
+	|
+    public  saveButton <ButtonFragment> = saveButton.
+	public titleEditor <TextEditorFragment> = titleEditor.
+	public contentsEditor <TextEditorFragment> = contentsEditor.
+	|
+) (
+) : (
+)
+public defaultAuthor: author <Author> defaultTag: tag <Tag> = (
+  defaultAuthor: author.
+  defaultTag: tag.
+)
+public updateDefaultAuthor: author <Author> defaultTag: tag <Tag> = (
+  defaultAuthor: author.
+  defaultTag: tag.
+)
+) : (
+)

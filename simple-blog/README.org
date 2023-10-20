@@ -1,0 +1,112 @@
+* About this project: building a blog application in Newspeak
+
+This project attempts to create a blog application in Newspeak
+
+
+* Development and runtime workflow
+
+- Write code in the only local Newspeak server: http://localhost:8081/primordialsoup.html?snapshot=HopscotchWebIDE.vfuel
+  - On startup always "Restore from backup" unless we know we backed up ~SimpleBlog.ns~
+- Top module name is ~SimpleBlog~ - this is the UI.
+- During development, do "Save to file" often. Save to file:///~/dev/my-projects-source/public-on-github/newspeak-simple-blog/ as ~SimpleBlog.ns~
+- LATER: Once we want to build it into vfuel:
+  - There is a link in  file:///~/software/newspeak-wasm-build/newspeak/SimpleBlog.ns to  file:///~/dev/my-projects-source/public-on-github/newspeak-simple-blog/SimpleBlog.ns
+  - So when building vfuel that should contain SimpleBlog.ns, we just:
+    - In file:///~/software/newspeak-wasm-build/newspeak  ~source build.sh~
+    - cp  file:///~/software/newspeak-wasm-build/newspeak/TheIDEOrTheApp.vfuel   # build dir -> server dir
+- 
+- 
+-
+
+* Snippets of code
+
+** Collections
+
+#+begin_src 
+|List list|
+List:: platform collections List.
+list:: List withAll: {1. 2.}.
+#+end_src
+
+* Issues and wisdoms
+
+** *Super wisdom*: If you get 'message not understood' but it seems to exist, MAKE IT PUBLIC* TRIPPED ME 50 TIMES 
+
+** During development, too many messages need to be marked public. Hard to evaluate what must be public for code to work. Is the a side-effect of class nesting? (Not sure at all, but wondering)
+
+** Class Date must be taken from Javascript platform as ~Date ::= platform js global at: 'Date'~?
+
+Was looking for occurances in existing code, found Date only such that is imported from the platform javascript:
+
+./newspeak/Browsing.ns:    Date = p js global at: 'Date'.
+./newspeak/HopscotchWebIDE.ns:  Date = p js global at: 'Date'.
+
+Is there no Datetime classes in Newspeak apart from the Javascript version?
+
+
+** What is the intent of class methods?  There seem to be very few in the system.
+
+Looking for class methods, I only found
+
+~Kernel>>KernelForJS#usingVmMirror:~ 
+~MetadataParsing>>MetadataParser#usingPlatform:~
+~NewspeakParsing#self~
+~MirrorTesting#self~
+~MirrorsForJs#self~
+~Newspeak2JSCompilation#Newspeak2PrimordialSoupCompilation~ (there is also self on that or deeper class)
+~RuntimeForElectron#keepsSources~
+~RuntimeForPrimordialSoup#keepsSources~
+(few more for the WithMirrors versions)
+
+
+*actually look at this before asking*
+
+
+** It seems impossible to rename a primary factory without deleting the class
+
+Trying to rename a primary factory method, one has to first delete it it seems, which causes exceptions and weird things
+
+Getting exception
+
+Noclass exemplar for method emptyWithDefaultMetadata in class Post MessageNotUnderstood: UndefinedObject evaluate:
+
+and it seems basically impossiblt 
+
+
+** Where to put dots (and where not to) in primary factory slot declarations?
+
+#+begin_src 
+public class Post emptyWithDefaultMetadata = (
+    |      
+    public author <Author>
+    public date <Date>
+    public tags <List> = List new.
+    public title <String>
+    public contents
+    |
+    author: defaultAuthor.
+    date:   Date new.
+    tags add: defaultTag.
+    )
+#+end_src
+
+It may be logical to place a dot  after the = initilizer, this combination of dots with no dots on slot declarations is very confusing. 
+
+When we
+- start with ~public tags <List>~, then decide to init as  ~public tags <List> = List new~ suddenly a dot is needed - very assymetrical
+- start with  ~public tags <List> = List new.~ then decide to remove the init, the dot is banned -
+- 
+
+
+** Wisdom: When you see THread broken, click "Terminate", then go back in browser.
+
+
+** In editor, just d-click on line, hit backspace. Line gets deleted but the Accept/cancel little icons never come up.
+
+
+
+* Bugs to report
+
+- Not possible to save a comment at the end of primary factory : It is removed after "Accept"
+* TODOs are generally kept in SimpleBlog factory
+

@@ -1,0 +1,14 @@
+Newspeak3
+'Root'
+class AAPerson = (
+	|
+	public firstName
+	public lastName
+	|
+) (
+public firstName: first lastName: last = (
+firstName:: first.
+lastName:: last.
+)
+) : (
+)

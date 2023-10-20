@@ -1,0 +1,43 @@
+Newspeak3
+'Root'
+class SimpleBlogApp packageUsing: manifest = (
+    |
+    SimpleBlog = manifest SimpleBlog.
+    AAPerson = manifest AAPerson.
+    milan = AAPerson new firstName: 'Milan' lastName: 'Zimmermann'.
+    |
+    ) (
+public main: platform args: args = (
+      |
+      blog
+      blogUI
+      blogModel
+      blogSubject
+      |
+      (* Prepare the SimpleBlog and initialize it by adding 2 posts. *)
+      (* How could I ever use Author right here? e.g. I want to have SimpleBlog usingPlatform: author: *)
+      blog:: SimpleBlog 
+        usingPlatform: platform.
+        
+      blog updateDefaultAuthor: (blog Author firstName: (milan firstName) lastName: (milan lastName))
+        defaultTag: (blog Tag name: 'misc').
+      
+      blogUI:: blog BlogUI usingPlatform: platform.
+      blogModel:: blogUI BlogModel new.  
+      
+      blogModel posts add:      
+        (blog Post emptyWithDefaultMetadata
+                  updateTitle: 'Post #1' contents: 'Short first post contents').
+      blogModel posts add:      
+        (blog Post emptyWithDefaultMetadata
+                  updateTitle: 'Post #2' contents: 'Short second post contents').  
+      (* set selected post as the last post - todo-00 This was supposed to be  done in posts addPost? why not call it ??? *)
+      blogModel selectedPost: blogModel posts last.        
+
+      (* Instantiate the BlogUI *)
+      (* Having instantiated the blogModel, create a blogSubject on blogModel, and open hopscotch window on blogSubject *)
+      blogSubject:: blogUI BlogSubject onModel: blogModel.
+      platform hopscotch HopscotchWindow openSubject: blogSubject.
+    )
+) : (
+)
