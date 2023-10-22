@@ -27,10 +27,10 @@ public main: platform args: args = (
       
       blogModel posts add:      
         (blog Post emptyWithDefaultMetadata
-                  updateTitle: 'Post #1' contents: 'Short first post contents').
+                  updateTitle: 'Post #1'; updateContent: 'Short first post content').
       blogModel posts add:      
         (blog Post emptyWithDefaultMetadata
-                  updateTitle: 'Post #2' contents: 'Short second post contents').  
+                  updateTitle: 'Post #2'; updateContent: 'Short second post content').  
       (* set selected post as the last post - todo-00 This was supposed to be  done in posts addPost? why not call it ??? *)
       blogModel selectedPost: blogModel posts last.        
 

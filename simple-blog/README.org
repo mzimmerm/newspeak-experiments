@@ -28,6 +28,38 @@ List:: platform collections List.
 list:: List withAll: {1. 2.}.
 #+end_src
 
+** Hopscotch
+
+*** Editable text field snippet
+
+Put a code like this in ~MyPresenter~ method ~MyPresenter#definitionForSomeSection~
+
+#+name: MyPresenter#definitionForSomeSection
+#+begin_src smalltalk
+    definitionForSomeSectionPlaceEditedResultOn: editedText <String> ^ <Fragment>
+    |titleEditor|
+    (* 1. Create the editable text field "titleEditor",
+          and return it as part of this definition method
+    ,*)
+    titleEditor:: TextEditorFragment new text: editedText
+    ^ column: {
+            titleEditor.
+            (* 2. In the same definition method (but can be in ANOTHER Presenter definition!) also
+                  add a button, which action should save the text edited in titleEditor into some
+                  other field, perhaps part of model, the passed ~editedText~.
+            *)
+            (button: 'Save post'
+                      action: [
+                        updateGUI: [
+                                (* 3. Clicking 'Save post' we need to PULL the Edited text into another field, 
+                                      using  ~titleEditor textBeingAccepted~, NOT ~titleFieldEditor text~
+                                 *)
+                          editedText:: titleEditor textBeingAccepted
+                          ]
+              ]).
+    }
+
+#+end_src
 * Issues and wisdoms
 
 ** *Super wisdom*: If you get 'message not understood' but it seems to exist, MAKE IT PUBLIC* TRIPPED ME 50 TIMES 
@@ -82,7 +114,7 @@ public class Post emptyWithDefaultMetadata = (
     public date <Date>
     public tags <List> = List new.
     public title <String>
-    public contents
+    public content
     |
     author: defaultAuthor.
     date:   Date new.

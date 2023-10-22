@@ -3,7 +3,6 @@ Newspeak3
 class SimpleBlog usingPlatform: platform 
 (* :exemplar: SimpleBlog usingPlatform: platform. *)
 (* Todos
-- rename contents to content (upper and lower)
 - Find an alternative to Date or find how to format Date to show like 2024/11/21
 - On Blog add slot #tocShort, #tocMedium, #tocLong
 - present postsTOC on the left, with Post slots (first tag, title, date) formatted as short/medium/long
@@ -64,9 +63,9 @@ public class Tag name: tagName = (
 public class Post emptyWithDefaultMetadata = (
     |      
     public title <String>
-    public contents
-    public contentsSummary (* text summarizing contents *)
-    public contentsSummaryImage (* image summarizing contents *)
+    public content
+    public contentSummary (* text summarizing content *)
+    public contentSummaryImage (* image summarizing content *)
     public author <Author>
     public date <Date>
     public tags <List> = List new.
@@ -75,16 +74,18 @@ public class Post emptyWithDefaultMetadata = (
     date:   Date new.
     tags add: defaultTag.
     ) (
-public updateTitle: title contents: contents = (
-      self title: title.
-      self contents: contents.
-    )
-public updateAuthor: author date: date tags: tags title: title contents: contents = (
+public updateAuthor: author date: date tags: tags title: title content: content = (
     self author:   author.
     self date:     date.
     self tags:     tags.
     self title:    title.
-    self contents: contents.
+    self content: content.
+    )
+public updateContent: content = (
+      self content: content.
+    )
+public updateTitle: title = (
+      self title: title.
     )
 ) : (
 )
@@ -120,18 +121,6 @@ createPresenter = (
     ^BlogPresenter onSubject: self.
   )
 isKindOfBlogSubject = ( ^true. )
-displayFirstPostAction = (
-(* todo-00-last
-*)
-)
-selectPostInTOCAction = (
-(* todo-00-last
-*)
-)
-newPostAction = (
-(* todo-00-last
-*)
-)
 isMyKind: other = ( ^ other isKindOfBlogSubject. )
 ) : (
 )
@@ -144,41 +133,38 @@ blogTitle = (
       )
 isMyKind: other = ( ^other isKindOfBlogPresenter. )
 isKindOfBlogPresenter = ( ^true. )
-private tocFragments ^<List[Fragment]> = (
-	(* Creates and returns a list of fragments, each fragment presents TOC section for one Post.
-        Each fragment in the returned list is created by invoking #tocFragmentForPost:post.
+private definitionForTOCItems ^<List[Fragment]> = (
+    (* Creates and returns a list of fragments, each fragment presents TOC section for one Post.
+     *     Each fragment in the returned list is created by invoking #definitionForTOCItemsItemOfPost:post.
     *)
     | tocFragments |
     tocFragments: List new.
     tocFragments add: (label: ' POSTS: ').
         
-    subject model posts do: [ :post | tocFragments add: (tocFragmentForPost: post). ].
+    subject model posts do: [ :post | tocFragments add: (definitionForTOCItemsItemOfPost: post). ].
     
     ^tocFragments.
 )
-newPostEditorFragment = (
+definitionForNewPost = (
 	(*
-	Creates a new empty post, then creates and answers 
-    a fragment which is a functioning editor of new Post.
+	 * Creates a new empty post, then creates and answers 
+   * a fragment which is a functioning editor of new Post.
 	*)
 	|newPost|
-    newPost:: Post emptyWithDefaultMetadata
-                  updateTitle: 'New post ...' contents: 'Empty contents ...'.
-    ^postEditorFragmentFor: newPost.              
+newPost:: Post emptyWithDefaultMetadata
+                 updateTitle: 'New post ...' content: 'Empty content ...'.
+  ^postEditorFragmentFor: newPost.              
 )
 definition = (
     ^ column: {
-      (* todo-00-last-last : Think of a good layout, and button (link?) placement for "new Post" *)
       label: blogTitle .
       row: {
-        column: tocFragments.
+        column: definitionForTOCItems.
         postEditorFragmentFor: subject model selectedPost.
-        
-        (* todo-00-last-done - label: selectedPostString. *)
         }.
     }.
 )
-private tocFragmentForPost: post = (
+private definitionForTOCItemOfPost: post = (
 	(*
     Definition of a TOC item for the passed post.
     A column with two rows, first row has a link with title from the passed post, 
@@ -208,29 +194,30 @@ private tocFragmentForPost: post = (
        }. 
 	}.
 )
-postEditorFragmentFor: post <Post> = (
+postEditorFragmentFor: post <Post> ^<Fragment> = (
 	(* todo-00 finish this
+    
 	Preconditions:
-		- Assumes post exists, although post title and post contents may be empty or have a new post default 
+		- Assumes post exists, although post title and post content may be empty or have a new post default 
 		  text such as 'Initial title ...'
       
 	Represents the editor of an existing post. The post may be new, then it's slots are set to some initial values. 
     Answers the editor which is a row fragment with:
-    	- a Save post button, the button's action replaces the old post title and contents 
-          with title and contents from the editor fields below
+    	- a Save post button, the button's action replaces the old post title and content 
+          with title and content from the editor fields below
         - a TextField (input) named title
-        - a TextField  (input) named contents
+        - a TextField  (input) named content
     
 	Notes:
 		- Implementation of the 'Save post' button could use ButtonFragment.
           But that is NOT public in ~HopscotchForHTML5~, only exposed via ~Presenter>>button:action:~  which answers ~Fragment~,
             so we use ~Presenter>>button:action:~ to create the button.
-        - Implementation of the titleEditor and contentsEditor uses ~TextEditorFragment~ directly as it is public in ~HopscotchForHTML5~.
+        - Implementation of the titleEditor and contentEditor uses ~TextEditorFragment~ directly as it is public in ~HopscotchForHTML5~.
           We import it via  ~BlogUI~ slot ~fragments = platform hopscotch fragments~
 	*)
     (* todo-00-last
-    - If Holder titleEditor and contentsEditor is nil, set titleEditor and contentsEditor to  (fragments TextEditorFragment new text: 'Initial title ...'), 
-      otherwise set to holder titleEditor and holder contentsEditor
+    - If Holder titleEditor and contentEditor is nil, set titleEditor and contentEditor to  (fragments TextEditorFragment new text: 'Initial title ...'), 
+      otherwise set to holder titleEditor and holder contentEditor
     *)
 	
 	postEditorFragmentsHolder isNil ifTrue: [
@@ -239,31 +226,34 @@ postEditorFragmentFor: post <Post> = (
             		(button: 'Save post'
                 	action: [
                 		updateGUI: [
-                        	(* Update post text from editor new values *)
-                            (*
-                            postEditorFragmentsHolder  titleEditor leaveEditState.
-                            postEditorFragmentsHolder contentsEditor leaveEditState.
+                            (* Clicking 'Save post' updates the post instance title and content 
+                                 using ~titleEditor textBeingAccepted~, NOT ~titleEditor text~.
                             *)
-                            (* Clicking 'Save post' updates the post instance *)
-                			post 
-                    			(* pulling textBeingAccepted MUST BE PRECEDED WTIH leaveEditState, else Exception on createVisual: *)
-                    			updateTitle: postEditorFragmentsHolder titleEditor textBeingAccepted
-                        		contents: postEditorFragmentsHolder contentsEditor textBeingAccepted
+                            
+              				post updateTitle: postEditorFragmentsHolder titleEditor textBeingAccepted.                            
+              				post updateContent: postEditorFragmentsHolder contentEditor textBeingAccepted.
+                            
                     	]
 					])
-				(* Initial editors text are from the passed post *)
-				titleEditor: (fragments TextEditorFragment new text: post title)
-				contentsEditor:  (fragments TextEditorFragment new text: post contents)
+				(* Set the initial title and content editors from the passed post *)
+        (*
+         * TextEditorFragment can be ALMOST used instead of CodeMirrorFragment,
+         *   but saving un-edited field has exception caused by textX nil.
+				 * titleEditor: (fragments TextEditorFragment new text: post title)
+				 * contentEditor:  (fragments TextEditorFragment new text: post content)
+        *)                
+				titleEditor: (fragments CodeMirrorFragment onText: post title)
+				contentEditor:  (fragments CodeMirrorFragment onText: post content)
                 .
 	] ifFalse: [
-    	(* always false - never gets here *)
+    	(* todo : always false - never gets here. Investigate why *)
     	break.
     ]
     .
 	^ column: {
     		postEditorFragmentsHolder saveButton.
     		postEditorFragmentsHolder titleEditor.
-    		postEditorFragmentsHolder contentsEditor.          
+    		postEditorFragmentsHolder contentEditor.          
     		}.
 )
 ) : (
@@ -273,14 +263,14 @@ postEditorFragmentFor: post <Post> = (
 public class PostEditorFragmentsHolder
 	saveButton: saveButton <ButtonFragment>
 	titleEditor: titleEditor <TextEditorFragment>
-    contentsEditor: contentsEditor <TextEditorFragment> = (
+    contentEditor: contentEditor <TextEditorFragment> = (
     (*
     Holder class for post editor fragments. todo-00 maybe move to Post or BlogUI?
     *)
 	|
-    public  saveButton <ButtonFragment> = saveButton.
+  public  saveButton <ButtonFragment> = saveButton.
 	public titleEditor <TextEditorFragment> = titleEditor.
-	public contentsEditor <TextEditorFragment> = contentsEditor.
+	public contentEditor <TextEditorFragment> = contentEditor.
 	|
 ) (
 ) : (
