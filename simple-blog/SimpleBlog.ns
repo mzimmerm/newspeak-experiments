@@ -133,18 +133,6 @@ blogTitle = (
       )
 isMyKind: other = ( ^other isKindOfBlogPresenter. )
 isKindOfBlogPresenter = ( ^true. )
-private definitionForTOCItems ^<List[Fragment]> = (
-    (* Creates and returns a list of fragments, each fragment presents TOC section for one Post.
-     *     Each fragment in the returned list is created by invoking #definitionForTOCItemsItemOfPost:post.
-    *)
-    | tocFragments |
-    tocFragments: List new.
-    tocFragments add: (label: ' POSTS: ').
-        
-    subject model posts do: [ :post | tocFragments add: (definitionForTOCItemsItemOfPost: post). ].
-    
-    ^tocFragments.
-)
 definitionForNewPost = (
 	(*
 	 * Creates a new empty post, then creates and answers 
@@ -255,6 +243,18 @@ postEditorFragmentFor: post <Post> ^<Fragment> = (
     		postEditorFragmentsHolder titleEditor.
     		postEditorFragmentsHolder contentEditor.          
     		}.
+)
+private definitionForTOCItems ^<List[Fragment]> = (
+    (* Creates and returns a list of fragments, each fragment presents TOC section for one Post.
+     *     Each fragment in the returned list is created by invoking #definitionForTOCItemsItemOfPost:post.
+    *)
+    | tocFragments |
+    tocFragments: List new.
+    tocFragments add: (label: ' POSTS: ').
+        
+    subject model posts do: [ :post | tocFragments add: (definitionForTOCItemOfPost: post). ].
+    
+    ^tocFragments.
 )
 ) : (
 )
