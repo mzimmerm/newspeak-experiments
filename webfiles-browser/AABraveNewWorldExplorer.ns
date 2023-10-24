@@ -1,10 +1,11 @@
 Newspeak3
 'Root'
-class AABraveNewWorldExplorer usingPlatform: platform = (
+class AABraveNewWorldExplorer usingPlatform: platform ide: ide = (
 	|
 	private Presenter = platform hopscotch core Presenter.
 	private Subject = platform hopscotch core Subject.
-    private FilePath = platform files FilePath.
+    private webFiles = ide webFiles.
+    private WebFilesFolder = webFiles Folder.
 	|
 ) (
 public class FileSubject onModel: m <String> = Subject onModel: m () (
@@ -17,11 +18,12 @@ public isKindOfFileSubject = (
 public isMyKind: other = (
 	^ other isKindOfFileSubject.
 )
-public isDirectory ^<Boolean> = (
-	^(FilePath for: fullFilePath) isDirectory.
-)
 public fullFilePath ^ <String> = (
     ^ model.
+)
+public isDirectory ^<Boolean> = (
+	(* todo ^(FilePath for: fullFilePath) isDirectory.*)
+    ^ false.
 )
 ) : (
 )
@@ -36,6 +38,29 @@ public isKindOfFilePresenter = (
 	^ true.
 )
 ) : (
+)
+public runInWorkspaceOnPlatform: platform ide: ide = (
+
+|explorer subject tmpFolder|
+explorer:: AABraveNewWorldExplorer usingPlatform: platform ide: ide.
+subject:: explorer FileSubject onModel: 'file:///home/mzimmermann/tmp'.
+hopscotch core HopscotchWindow openSubject: subject.
+
+platform js global at: 'JSZip'. (* *)
+tmpFolder:: ide webFiles Folder named: 'tmp'.
+tmpFolder name.
+tmpFolder.
+
+tmpFolder addTextFile: 'dummy1.txt' contents: 'A dummy file'.
+(* both private: tmpFolder directory. tmpFolder innerDirectory. *)
+tmpFolder save. (* offers to save in servable top level file named tmp.zip with dummy1.txt inside. *)
+
+
+
+(*
+hopscotch core = hopscotch.
+hopscotch HopscotchWindow
+*)
 )
 ) : (
 )
