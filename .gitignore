@@ -1,4 +1,7 @@
 # Ignore these dirs hierarchically
 backups/
 rejected/
-.emacs.d/
+/.emacs.d/
+/.emacs.desktop
+/.emacs.desktop.lock
+/.project.el

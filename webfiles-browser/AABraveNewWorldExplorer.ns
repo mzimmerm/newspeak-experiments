@@ -1,0 +1,41 @@
+Newspeak3
+'Root'
+class AABraveNewWorldExplorer usingPlatform: platform = (
+	|
+	private Presenter = platform hopscotch core Presenter.
+	private Subject = platform hopscotch core Subject.
+    private FilePath = platform files FilePath.
+	|
+) (
+public class FileSubject onModel: m <String> = Subject onModel: m () (
+public createPresenter ^ <Presenter> = (
+	^FilePresenter onSubject: self.
+    )
+public isKindOfFileSubject = (
+	^ true.
+)
+public isMyKind: other = (
+	^ other isKindOfFileSubject.
+)
+public isDirectory ^<Boolean> = (
+	^(FilePath for: fullFilePath) isDirectory.
+)
+public fullFilePath ^ <String> = (
+    ^ model.
+)
+) : (
+)
+public class FilePresenter onSubject: subject = Presenter onSubject: subject () (
+public definition ^<Fragment> = (
+	^label: subject model.
+)
+public isMyKind: other = (
+	^ other isKindOfFilePresenter.
+)
+public isKindOfFilePresenter = (
+	^ true.
+)
+) : (
+)
+) : (
+)

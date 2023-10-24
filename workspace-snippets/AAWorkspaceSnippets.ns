@@ -1,0 +1,77 @@
+Newspeak3
+'Root'
+class AAWorkspaceSnippets usingPlatform: platform ide: ide = (
+	(* 
+   Role: This class role is to store and run snippets from workspace.
+   
+   - role 'store snippets': The snippets are stored in appropriately named instance methods.
+          A snippet should be first tested in workspace, then pasted to a new instance method.
+          If the snippet refers to a class object (e.g. Person), it will not run in the method unchanged,
+          because Workspace has direct access to class objects by name (e.g. Person):
+          we need to add a slot such as |Person| and set Person:: ide namespacing manifest Person.
+   - role 'run snippets':  Run a snippet stored in an instance method such as 'openHopscotchWindowForBrowsingClass' 
+          by pasting to workspace code:
+      
+         ~(AAWorkspaceSnippets usingPlatform: platform ide: ide) openHopscotchWindowForBrowsingClass.~
+  
+    Notes: 
+    
+    	1. Stores 'platform', 'ide' and 'hopscotch' on slots, for instance methods 
+            to access them as if their contents was pasted to Workspace.
+            
+        2.1.  The IDE APP instance
+             ~hopscotchWebIDE:: manifest HopscotchWebIDE packageUsing: (ide namespacing manifest)~
+             ~hopscotchWebIDE = ide.~ => 'false'
+             why? Because the hopscotchWebIDE is a newly created ide.
+             also, such hopscotchWebIDE can not be used in place of ide to create e.g. browsing in item 3,
+             such browsing would fail when a subject from it is open in HopscotchWindow
+             
+        2.2.  ~browsing:: Browsing usingPlatform: platform ide: hopscotchWebIDE.~
+             ~browsing = ide browsing.~ => 'false'
+         
+        2.3.  This code:
+                   classMirrorForPerson:: platform mirrors ClassMirror 
+	reflecting: AAPerson.
+                   objectMirrorForPersonExemplar:: nil.
+
+                   classModel:: (browsing ClassModel 
+                   	declaration: classMirrorForPerson mixin declaration 
+                       exemplar:    objectMirrorForPersonExemplar).
+                   subject::  (browsing ClassSubject onModel: classModel).
+                   hopscotch core HopscotchWindow openSubject: subject.
+        
+                
+                fails in the last line in HopscotchWindow updateDisplay, 
+                where currentPresenter is nil, calling refreshmentPresenter
+                as it is coming from a new non-displayed instance of hopscotchWebIDE
+      
+  
+    *)
+	|
+    (* Store the, platform, ide, and hopscotch for running from Workspace - all 3 are available in Workspace.
+        but not manifest, so we create manifest in local variable
+    *)
+    public platform    = platform.
+    public ide              = ide.
+    public hopscotch  = platform hopscotch.
+	|
+) (
+public openHopscotchWindowForBrowsingClass = (
+
+| browsing classMirrorForPerson objectMirrorForPersonExemplar classModel subject AAPerson manifest = ide namespacing manifest.|
+
+AAPerson:: manifest AAPerson.
+browsing:: ide browsing.
+
+classMirrorForPerson:: platform mirrors ClassMirror 
+	reflecting: AAPerson.
+objectMirrorForPersonExemplar:: nil.
+
+classModel:: (browsing ClassModel 
+	declaration: classMirrorForPerson mixin declaration 
+    exemplar:    objectMirrorForPersonExemplar).
+subject::  (browsing ClassSubject onModel: classModel).
+hopscotch core HopscotchWindow openSubject: subject.
+)
+) : (
+)
