@@ -1,30 +1,51 @@
 
-#+name: workspace1
+* AAUtilities structure
+
+- AAUtilities
+  - Files
+    - y FilePathBase
+    - y FilesystemBase
+    - y FilePath (passed FilesystemMock but only needs API of FilesystemBase. everything is public to adapt to the demo, but many things should not be) 
+  - FilesMock    
+    - y FilesystemMock (must newly import FilePath)
+
+
+* Get files on level 1 purely from top Workspace
+
+#+name: workspace-top
 #+begin_example
-|filesystemMock root level1Entries level1FullPaths|
-filesystemMock:: FilesystemMock new.
-(* todo can we address as outer? *)
-root:: filesystemMock FilePath for: '/home/user/' inFilesystem: filesystemMock.
-(* root outer. : MessageNotUnderstood: FilePath outer *)
+|filesystemMock root level1Entries level1FullPaths
+
+public files          = (ide namespacing manifest AAUtilities usingPlatform: platform) Files new.
+public filesMock = (ide namespacing manifest AAUtilities usingPlatform: platform) FilesMock using: files FilesystemBase.
+public FilePath   = files FilePath.
+public FilesystemMock =  filesMock FilesystemMock.
+|
+
+filesystemMock:: FilesystemMock usingUtilityFiles: files.
+root:: FilePath for: '/home/user/' inFilesystem: filesystemMock.
 level1Entries:: root entries.
 level1FullPaths:: level1Entries collect: [:filePath | (filePath fullFilePath)].
 #+end_example
 
-Current:
+* Run AABraveNewWorldExplorer from top Workspace
 
-- Utilities
-  - Files
-    - FilePathBase
-    - FilesystemBase
-    - FilesystemMock
-      - FilePath
 
-Change to:
+#+begin_example
+|explorer| 
+explorer:: AABraveNewWorldExplorer usingPlatform: platform ide: ide.
+hopscotch core HopscotchWindow openSubject: ((explorer FileSubject) onModel: '/home/user/').
+#+end_example
 
-- Utilities
-  - Files
-    - FilePathBase
-    - FilesystemBase
-    - FilePath (passed FilesystemMock but only needs API of FilesystemBase) 
-  - FilesMock    
-    - FilesystemMock (must newly import FilePath)
+Evaluating it shows two things:
+
+- result of evaluation: instance of HopscotchWindow (with slots)
+- The HopscotchWindow bar (clock, home, reload, help) with a single label (/home/user/) apprended from FilePresenter#define
+
+
+[[file:img/Notes.org-explorer-1.png]]
+
+
+public createPresenter ^ <Presenter> = (
+	^FilePresenter onSubject: self.
+    )
