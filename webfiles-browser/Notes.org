@@ -1,0 +1,30 @@
+
+#+name: workspace1
+#+begin_example
+|filesystemMock root level1Entries level1FullPaths|
+filesystemMock:: FilesystemMock new.
+(* todo can we address as outer? *)
+root:: filesystemMock FilePath for: '/home/user/' inFilesystem: filesystemMock.
+(* root outer. : MessageNotUnderstood: FilePath outer *)
+level1Entries:: root entries.
+level1FullPaths:: level1Entries collect: [:filePath | (filePath fullFilePath)].
+#+end_example
+
+Current:
+
+- Utilities
+  - Files
+    - FilePathBase
+    - FilesystemBase
+    - FilesystemMock
+      - FilePath
+
+Change to:
+
+- Utilities
+  - Files
+    - FilePathBase
+    - FilesystemBase
+    - FilePath (passed FilesystemMock but only needs API of FilesystemBase) 
+  - FilesMock    
+    - FilesystemMock (must newly import FilePath)
