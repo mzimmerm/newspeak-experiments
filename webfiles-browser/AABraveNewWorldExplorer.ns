@@ -1,11 +1,15 @@
 Newspeak3
 'Root'
 class AABraveNewWorldExplorer usingPlatform: platform ide: ide = (
+	(* Modified example from: https://newspeaklanguage.org/ns101/ns101.html *)
 	|
 	private Presenter = platform hopscotch core Presenter.
 	private Subject = platform hopscotch core Subject.
+    private List = platform collections List.
+    (*
     private webFiles = ide webFiles.
     private WebFilesFolder = webFiles Folder.
+    *)
 	|
 ) (
 public class FileSubject onModel: m <String> = Subject onModel: m () (
@@ -37,6 +41,138 @@ public isMyKind: other = (
 public isKindOfFilePresenter = (
 	^ true.
 )
+) : (
+)
+class FilePathBase for: fullFilePath <String> 
+(* :exemplar: FilePathBase for: '/home/user/Documents' *) 
+= (
+	(*
+    Primitive absolute minimalrepresentation of file and directory paths on a filesystem.
+    Intended implementors are FilePath classes living on top of mocked filesystems. 
+    *)
+	|
+	public fullFilePath <String> = fullFilePath.
+	|
+) (
+public entries ^<List[FilePathBase]> = (
+	subclassResponsibility.
+)
+public isDirectory ^<Boolean> = (
+	subclassResponsibility.
+)
+public printString ^ <String> = (
+	|entriesStr isDirectoryStr|
+    entriesStr:: ''.
+    isDirectoryStr:: ''.
+    (*  entries do: [ :filePath | entriesStr, ' ', filePath printString]. TODO ENTRIES IS RED *)
+	^ 'instance of FilePathBase :: fullFilePath=', fullFilePath, ' : isDirectory=', isDirectoryStr, ' : entries=', entriesStr.
+)
+) : (
+)
+class FilesystemBase = (
+) (
+public root ^ <FilePathBase> = ( subclassResponsibility. )
+public findFilePathFor: fullFilePath <String>  ^ <FilePath> = (
+	subclassResponsibility.
+)
+) : (
+)
+class FilesystemMock = FilesystemBase (
+	(* Mock filesystem *)
+	|
+    (* All entries. Clients can only create one of these *)
+    private allEntries <List[FilePathBase]> = List new. 
+    
+    private rootPath = '/home/user/'.
+
+	(* Slots for file and directory paths, named to show their tree structure. *)
+    aa
+    d0
+    	d0d1
+        	d0d1f1
+        	d0d1f2
+    	d0d2
+        	d0d2f1
+        	d0d2f2
+    	d0d3
+        d0f1    
+	|
+   
+    (* Initialize the mocked file and directory paths slots. *)
+
+   (* d0d1f1:: FilePath for: 'aaaa' mock: self. *)
+   d0d1f1:: FilePath for: rootPath, 'Documents/', 'NewspeakPresentation.vfuel'. d0d1f1 isDirectory: false. d0d1f1 entries: nil.
+   d0d1f2:: FilePath for: rootPath, 'Documents/', 'EmacsPresentation.org'. d0d1f2 isDirectory: false. d0d1f2 entries: nil.
+   d0d2f1:: FilePath for: rootPath, 'Downloads/', 'Opensuse.iso'. d0d2f1 isDirectory: false. d0d2f1 entries: nil.
+   d0d2f2:: FilePath for: rootPath, 'Downloads/', 'Debian.iso'. d0d2f2 isDirectory: false. d0d2f2 entries: nil.
+   d0d1:: FilePath for: rootPath, 'Documents/'. d0d1 isDirectory: true. d0d1 entries: {d0d1f1. d0d1f2}.
+   d0d2:: FilePath for: rootPath, 'Downloads/'. d0d2 isDirectory: true. d0d2 entries: {d0d2f1. d0d2f2}.
+   d0d3:: FilePath for: rootPath, 'Public/'. d0d3 isDirectory: true. d0d3 entries: {}.
+   d0f1:: FilePath for: rootPath, 'wine.ini'. d0f1 isDirectory: false. d0f1 entries: nil.
+   d0:: FilePath for: rootPath. d0 isDirectory: true. d0 entries: {d0d1. d0d2. d0d3. d0f1}.
+ 
+   allEntries addAll: {d0d1f1.  d0d1f2. d0d2f1. d0d2f2. d0d1. d0d2. d0d3. d0f1. d0.}.
+   
+   
+   (* todo exception if self not in allEntries, but must override = and hash for it *)
+) (
+public class FilePath for: fullFilePath <String>
+= FilePathBase for: fullFilePath (
+	|
+    isDirectory_slot <Boolean>
+    entries_slot <List[FilePathBase]>
+	(* Here FilePathBase is initialized, sets fullFilePath *)
+    |
+    (*
+     d0d1f1 = d0d1f1 ifTrue: [ 'd0d1f1 = d0d1f1 true!' out.] ifFalse: ['d0d1f1 = d0d1f1 false' out.].
+     d0d1f1 = d0d1f2 ifTrue: [ 'd0d1f1 = d0d1f2 true!' out.] ifFalse: ['d0d1f1 = d0d1f2 false' out.].
+ 	*) 
+ 
+   (* todo exception if self not in allEntries, but must override = and hash for it *)
+   
+) (
+public isDirectory ^ <Boolean> = (
+	^ isDirectory_slot.
+)
+public entries ^ <List[FilePath]> = (
+	^ entries_slot.
+)
+public isDirectory: isDirectory <Boolean> = (
+	isDirectory_slot: isDirectory.
+)
+public entries: entries <List[FilePath]> = (
+	entries_slot: entries.
+)
+public printString ^ <String> = (
+	|entriesStr isDirectoryStr|
+    entriesStr:: ''.
+    isDirectoryStr:: ''.
+    (* todo entries should not be null, but they are in exemplar *)
+    (*
+    entries isNil ifFalse: [
+    	entries do: [ :filePath | entriesStr, ' ', filePath printString].
+        ].
+    isDirectory isNil ifFalse: [isDirectoryStr:: isDirectory printString] .  
+    *)
+	^ 'instance of FilePath :: fullFilePath=', fullFilePath, ' : isDirectory=', isDirectoryStr, ' : entries=', entriesStr.
+)
+) : (
+public for: fullFilePath <String>  inFilesystem: filesystem <FilesystemMock> ^ <FilePath> = (
+	^ filesystem findFilePathFor: fullFilePath.
+)
+)
+public findFilePathFor: fullFilePath <String>  ^ <FilePath> = (
+    |matchingEntries|
+	matchingEntries:: allEntries select: [:filePathEntry <FilePath> | filePathEntry fullFilePath = fullFilePath].
+    matchingEntries isEmpty ifTrue: [
+    	self error: ('findFilePathFor ', fullFilePath, ': Not found in all entries').
+    ].
+    (matchingEntries size > 1) ifTrue: [
+    	self error: ('findFilePathFor ', fullFilePath, ': found more than one entry, first two: ', (matchingEntries at: 1) printString, (matchingEntries at: 2) printString ).
+    ].
+    ^ matchingEntries first.
+)
+public root ^ <FilePathBase> = ( ^ d0. )
 ) : (
 )
 public runInWorkspaceOnPlatform: platform ide: ide = (
