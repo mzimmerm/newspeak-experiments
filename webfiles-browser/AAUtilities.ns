@@ -42,18 +42,17 @@ public findFilePathFor: fullFilePath <String>  ^ <FilePath> = (
 )
 public class FilePath for: fullFilePath <String>
     = FilePathBase for: fullFilePath (
+    	(* FilePath primary should only be used to create inial files 
+            in FilesystemBase or FilesystemMock.
+            Further creation of FilePath should use the class method
+            
+            for: fullFilePath <String>  inFilesystem: filesystem <FilesystemBase> ^ <FilePath>
+        *)
     	|
         isDirectory_slot <Boolean>
         entries_slot <List[FilePathBase]>
     	(* Here FilePathBase is initialized, sets fullFilePath *)
         |
-        (*
-         d0d1f1 = d0d1f1 ifTrue: [ 'd0d1f1 = d0d1f1 true!' out.] ifFalse: ['d0d1f1 = d0d1f1 false' out.].
-         d0d1f1 = d0d1f2 ifTrue: [ 'd0d1f1 = d0d1f2 true!' out.] ifFalse: ['d0d1f1 = d0d1f2 false' out.].
-     	*) 
-     
-       (* todo exception if self not in allEntries, but must override = and hash for it *)
-       
     ) (
 public isDirectory ^ <Boolean> = (
         	^ isDirectory_slot.
@@ -82,11 +81,16 @@ public printString ^ <String> = (
         )
 public simpleName ^<String> = (
 	|i|
-	i:: fullFilePath lastIndexOf: '/'.
-	^ fullFilePath copyStringFrom: i to: fullFilePath size - 1.
+    ^isDirectory ifTrue: [fullFilePath] (* todo : show last node only *)
+    ifFalse: [
+		i:: fullFilePath lastIndexOf: '/'.
+		i > 0 
+    		ifTrue: [fullFilePath copyStringFrom: i + 1 to: fullFilePath size.]
+            ifFalse: ['']
+    ]
 )
 ) : (
-public for: fullFilePath <String>  inFilesystem: filesystem <FilesystemMock> ^ <FilePath> = (
+public for: fullFilePath <String>  inFilesystem: filesystem <FilesystemBase> ^ <FilePath> = (
           ^ filesystem findFilePathFor: fullFilePath.
         )
 )

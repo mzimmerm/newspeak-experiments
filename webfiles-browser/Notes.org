@@ -10,26 +10,28 @@
     - y FilesystemMock (must newly import FilePath)
 
 
-* Get files on level 1 purely from top Workspace
+* 1. Non-UI: Get files on level 1 from top Workspace
 
 #+name: workspace-top
 #+begin_example
-|filesystemMock root level1Entries level1FullPaths
-
-public files          = (ide namespacing manifest AAUtilities usingPlatform: platform) Files new.
-public filesMock = (ide namespacing manifest AAUtilities usingPlatform: platform) FilesMock using: files FilesystemBase.
-public FilePath   = files FilePath.
-public FilesystemMock =  filesMock FilesystemMock.
+|
+root level1Entries level1FullPaths
+private utilities = (ide namespacing manifest AAUtilities) usingPlatform: platform.
+private files = utilities Files new.
+private filesMock = utilities FilesMock using: files FilesystemBase.
+private FilePath = files FilePath.
+private FilesystemMock = filesMock FilesystemMock.
+(* single instance of filesystemMock. All FilePath creations are delegated to it *)
+private filesystemMock = FilesystemMock usingUtilityFiles: files.
 |
 
-filesystemMock:: FilesystemMock usingUtilityFiles: files.
 root:: FilePath for: '/home/user/' inFilesystem: filesystemMock.
 level1Entries:: root entries.
 level1FullPaths:: level1Entries collect: [:filePath | (filePath fullFilePath)].
 #+end_example
 
-* Run AABraveNewWorldExplorer from top Workspace
 
+* In HopscotchWindow openSubject: AABraveNewWorldExplorer FileSubject from top Workspace
 
 #+begin_example
 |explorer| 

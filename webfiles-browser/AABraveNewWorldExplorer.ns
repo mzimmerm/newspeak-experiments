@@ -8,6 +8,14 @@ class AABraveNewWorldExplorer usingPlatform: platform ide: ide
 	private Presenter = platform hopscotch core Presenter.
 	private Subject = platform hopscotch core Subject.
     private List = platform collections List.
+    
+    private utilities = (ide namespacing manifest AAUtilities) usingPlatform: platform.
+    private files = utilities Files new.
+    private filesMock = utilities FilesMock using: files FilesystemBase.
+    private FilePath = files FilePath.
+    private FilesystemMock = filesMock FilesystemMock.
+	(* single instance of filesystemMock. All FilePath creations are delegated to it *)
+	private filesystemMock = FilesystemMock usingUtilityFiles: files.
 
     (* private webFiles = ide webFiles. private WebFilesFolder = webFiles Folder. *)
 	|
@@ -27,23 +35,57 @@ public createPresenter ^ <Presenter> = (
     )
 public isDirectory ^<Boolean> = (
 	(* Note that fullFilePath just answers model - the full file name *)
-	^(FilePath for: fullFilePath) isDirectory.
+	^(FilePath for: fullFilePath inFilesystem: filesystemMock) isDirectory
 )
 public localFileName ^ <String> = (
 	(* Answer basename: the last portion of the fullFilePath=model string *)
-	^(FilePathFor: fullFilePath) simpleName.
+	^(FilePath for: fullFilePath inFilesystem: filesystemMock) simpleName.
 )
+public contents ^ <Collection[FileSubject]> = (
+	(* Answer the contents of this FileSubject: a collection of this FileSubject children *)
+    ^isDirectory
+    	ifTrue: [|thisDirectory|
+        	thisDirectory: (FilePath for: fullFilePath inFilesystem: filesystemMock). (* FilePath for this FileSubject full name=fullFilePath *)
+            thisDirectory entries collect:
+            	[:childPath <FilePath> | FileSubject onModel: childPath fullFilePath]. (* todo-00 was: name *)
+        ]
+        ifFalse: [
+        	List new.
+        ]
+)
+public printString ^ <String> = (
+			^ 'FileSubject :: isDirectory=', isDirectory printString, ' : localFileName=', localFileName.
+        )
 ) : (
 )
 public class FilePresenter onSubject: subject = Presenter onSubject: subject () (
-public definition ^<Fragment> = (
-	^label: subject model.
-)
 public isMyKind: other = (
 	^ other isKindOfFilePresenter.
 )
 public isKindOfFilePresenter = (
 	^ true.
+)
+directoryContentsPresenters ^ <Collection[Presenter]> = (
+	^subject contents collect: [ :childFileSubject | childFileSubject presenter ].
+)
+public definition ^<Fragment> = (
+    ^ subject isDirectory
+    	ifTrue: [directoryPresentation]
+        ifFalse: [filePresentation]
+)
+directoryPresentation ^ <Fragment> = (
+	|dirAndContentsPresentation|
+    dirAndContentsPresentation:: List new add: filePresentation; addAll: directoryContentsPresenters.
+    
+	^ collapsed: [filePresentation] (* show collapsed directory as label: name *)
+    expanded: [column: dirAndContentsPresentation] (* show expanded directory as list of label: childName *)
+    initiallyExpanded: false.
+    
+)
+filePresentation ^ <Fragment> = (
+	('subject=', subject printString) out.
+    ( 'subject localFileName=', subject localFileName) out.
+	^ label: subject localFileName
 )
 ) : (
 )
