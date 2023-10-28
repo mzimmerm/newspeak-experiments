@@ -116,6 +116,10 @@ public class FilesystemMock usingUtilityFiles: files <AAUtilities[Files]> = File
     aa
     d0
     	d0d1
+        	d0d1d1
+            	d0d1d1f1
+                d0d1d1f2
+                d0d1d1f3
         	d0d1f1
         	d0d1f2
     	d0d2
@@ -128,17 +132,21 @@ public class FilesystemMock usingUtilityFiles: files <AAUtilities[Files]> = File
     (* Initialize the mocked file and directory paths slots. *)
 
    (* d0d1f1:: FilePath for: 'aaaa' mock: self. *)
+   d0d1d1f1:: FilePath for: rootPath, 'Documents/Video/', 'NewspeakInAction.mov'. d0d1d1f1 isDirectory: false. d0d1d1f1 entries: nil.
+   d0d1d1f2:: FilePath for: rootPath, 'Documents/Video/', 'NewspeakDemo1.mov'. d0d1d1f2 isDirectory: false. d0d1d1f2 entries: nil.
+   d0d1d1f3:: FilePath for: rootPath, 'Documents/Video/', 'NewspeakDemo2.mov'. d0d1d1f3 isDirectory: false. d0d1d1f3 entries: nil.   
+  d0d1d1:: FilePath for: rootPath, 'Documents/Video/'. d0d1d1 isDirectory: true. d0d1d1 entries: {d0d1d1f1. d0d1d1f2. d0d1d1f3}.
    d0d1f1:: FilePath for: rootPath, 'Documents/', 'NewspeakPresentation.vfuel'. d0d1f1 isDirectory: false. d0d1f1 entries: nil.
    d0d1f2:: FilePath for: rootPath, 'Documents/', 'EmacsPresentation.org'. d0d1f2 isDirectory: false. d0d1f2 entries: nil.
    d0d2f1:: FilePath for: rootPath, 'Downloads/', 'Opensuse.iso'. d0d2f1 isDirectory: false. d0d2f1 entries: nil.
    d0d2f2:: FilePath for: rootPath, 'Downloads/', 'Debian.iso'. d0d2f2 isDirectory: false. d0d2f2 entries: nil.
-   d0d1:: FilePath for: rootPath, 'Documents/'. d0d1 isDirectory: true. d0d1 entries: {d0d1f1. d0d1f2}.
+   d0d1:: FilePath for: rootPath, 'Documents/'. d0d1 isDirectory: true. d0d1 entries: {d0d1d1. d0d1f1. d0d1f2}.
    d0d2:: FilePath for: rootPath, 'Downloads/'. d0d2 isDirectory: true. d0d2 entries: {d0d2f1. d0d2f2}.
    d0d3:: FilePath for: rootPath, 'Public/'. d0d3 isDirectory: true. d0d3 entries: {}.
    d0f1:: FilePath for: rootPath, 'wine.ini'. d0f1 isDirectory: false. d0f1 entries: nil.
    d0:: FilePath for: rootPath. d0 isDirectory: true. d0 entries: {d0d1. d0d2. d0d3. d0f1}.
  
-   allEntries addAll: {d0d1f1.  d0d1f2. d0d2f1. d0d2f2. d0d1. d0d2. d0d3. d0f1. d0.}.
+   allEntries addAll: {d0d1d1f1. d0d1d1f2. d0d1d1f3. d0d1d1. d0d1f1.  d0d1f2. d0d2f1. d0d2f2. d0d1. d0d2. d0d3. d0f1. d0.}.
    
    
    (* todo exception if self not in allEntries, but must override = and hash for it *)
