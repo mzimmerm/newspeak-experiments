@@ -9,6 +9,10 @@ class AABraveNewWorldExplorer usingPlatform: platform ide: ide
 	private Subject = platform hopscotch core Subject.
     private List = platform collections List.
     
+    (* import graphics *)
+    private Color = platform graphics Color.
+    
+    (* import utilities *)
     private utilities = (ide namespacing manifest AAUtilities) usingPlatform: platform.
     private files = utilities Files new.
     private filesMock = utilities FilesMock using: files FilesystemBase.
@@ -58,15 +62,39 @@ public printString ^ <String> = (
         )
 ) : (
 )
-public class FilePresenter onSubject: subject = Presenter onSubject: subject () (
+public class FilePresenter onSubject: subject = Presenter onSubject: subject (
+	|
+    (* Width of the image representing the 'collapseIcon' and 'expandIcon'.
+    	Leaf file presenters will be shitfter to the right by blank: dirCollapserWidth
+        for sibling dirs and files to line up
+    *)
+    dirCollapserWidth = 10.
+    |
+) (
 public isMyKind: other = (
 	^ other isKindOfFilePresenter.
 )
 public isKindOfFilePresenter = (
 	^ true.
 )
-directoryContentsPresenters ^ <Collection[Presenter]> = (
-	^subject contents collect: [ :childFileSubject | childFileSubject presenter ].
+bar: def <Fragment> ^ <Fragment> = (
+	(* Answers a padder created around the passed fragment *)
+	^ (column: {
+    		blank: 4. (* width 4 *)
+        	row: {
+        		blank: 4.
+            	elastic: def.
+            	blank: 4.
+        	}.
+        	blank: 2.
+        }) color: (Color gray: 0.5). (* gray background on column *)
+)
+filePresentationCore ^ <Fragment> = (
+	(*
+	('subject=', subject printString) out.
+    ( 'subject localFileName=', subject localFileName) out.
+    *)
+	^ label: subject localFileName
 )
 public definition ^<Fragment> = (
     ^ subject isDirectory
@@ -75,17 +103,27 @@ public definition ^<Fragment> = (
 )
 directoryPresentation ^ <Fragment> = (
 	|dirAndContentsPresentation|
+    (* Present directory as file, followed by contents. *)
     dirAndContentsPresentation:: List new add: filePresentation; addAll: directoryContentsPresenters.
     
-	^ collapsed: [filePresentation] (* show collapsed directory as label: name *)
-    expanded: [column: dirAndContentsPresentation] (* show expanded directory as list of label: childName *)
+	^ collapsed: [filePresentation] (* show collapsed directory as label: name, padded in a bar *)
+    expanded: [column: dirAndContentsPresentation] (* show expanded directory as list of label: childFileName *)
     initiallyExpanded: false.
     
 )
+directoryContentsPresenters ^ <Collection[FilePresenter]> = (
+	(* Answer list of presenters, one for each childEntry in directory.
+		Each childEntry presenter is a new instance of FilePresenter,
+        answered by the childEntry's FileSubject createPresenter. 
+        The childEntry's FileSubject model is the file or dir name of the directory child.
+    *)
+	^subject contents collect: [ :childFileSubject | childFileSubject presenter ].
+)
 filePresentation ^ <Fragment> = (
-	('subject=', subject printString) out.
-    ( 'subject localFileName=', subject localFileName) out.
-	^ label: subject localFileName
+	(* Padder surrounding label with file name. todo-00 document *)
+	^ subject isDirectory
+    	ifTrue: [bar: filePresentationCore]
+        ifFalse: [bar: (row: { blank: dirCollapserWidth. filePresentationCore })]
 )
 ) : (
 )

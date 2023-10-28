@@ -10,7 +10,7 @@
     - y FilesystemMock (must newly import FilePath)
 
 
-* 1. Non-UI: Get files on level 1 from top Workspace
+* 1.  Top Workspace Non-UI: Get files on level 1.
 
 #+name: workspace-top
 #+begin_example
@@ -31,7 +31,7 @@ level1FullPaths:: level1Entries collect: [:filePath | (filePath fullFilePath)].
 #+end_example
 
 
-* In HopscotchWindow openSubject: AABraveNewWorldExplorer FileSubject from top Workspace
+* 2. Top Workspace UI : Run Explorer UI: In HopscotchWindow openSubject: AABraveNewWorldExplorer FileSubject
 
 #+begin_example
 |explorer| 
