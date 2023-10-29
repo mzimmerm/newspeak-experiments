@@ -24,10 +24,9 @@ class AABraveNewWorldExplorer usingPlatform: platform ide: ide
     (* private webFiles = ide webFiles. private WebFilesFolder = webFiles Folder. *)
 	|
 ) (
-public class FileSubject onModel: m <String> = Subject onModel: m () (
-public isKindOfFileSubject = (
-	^ true.
-)
+public class FileSubject onModel: m <String> = Subject onModel: m (
+|public initiallyExpanded <Boolean> ::= false.|
+) (
 public isMyKind: other = (
 	^ other isKindOfFileSubject.
 )
@@ -60,6 +59,23 @@ public contents ^ <Collection[FileSubject]> = (
 public printString ^ <String> = (
 			^ 'FileSubject :: isDirectory=', isDirectory printString, ' : localFileName=', localFileName.
         )
+public = x ^ <Boolean> = (
+	(* Equality override. FileSubjects are = if they have same model=fullFilePath, 
+        and are initially expanded the same way.
+    *)
+    ^ x isKindOfFileSubject and: [
+    		x fullFilePath = fullFilePath and: [x initiallyExpanded = initiallyExpanded]
+        ].
+)
+public hash ^ <Integer> = (
+	^ class hash bitXor: model hash.
+)
+public isKindOfFileSubject ^ <Boolean> = (
+	^ true.
+)
+public title ^ <String> = (
+	^ fullFilePath.
+    )
 ) : (
 )
 public class FilePresenter onSubject: subject = Presenter onSubject: subject (
@@ -101,7 +117,15 @@ public definition ^<Fragment> = (
     	ifTrue: [directoryPresentation]
         ifFalse: [filePresentation]
 )
-directoryPresentation ^ <Fragment> = (
+directoryContentsPresenters ^ <Collection[FilePresenter]> = (
+	(* Answer list of presenters, one for each childEntry in directory.
+		Each childEntry presenter is a new instance of FilePresenter,
+        answered by the childEntry's FileSubject createPresenter. 
+        The childEntry's FileSubject model is the file or dir name of the directory child.
+    *)
+	^subject contents collect: [ :childFileSubject | childFileSubject presenter ].
+)
+directoryPresentationOld ^ <Fragment> = (
 	|dirAndContentsPresentation|
     (* Present directory as file, followed by contents. *)
     dirAndContentsPresentation:: List new add: filePresentation; addAll: directoryContentsPresenters.
@@ -111,19 +135,41 @@ directoryPresentation ^ <Fragment> = (
     initiallyExpanded: false.
     
 )
-directoryContentsPresenters ^ <Collection[FilePresenter]> = (
-	(* Answer list of presenters, one for each childEntry in directory.
-		Each childEntry presenter is a new instance of FilePresenter,
-        answered by the childEntry's FileSubject createPresenter. 
-        The childEntry's FileSubject model is the file or dir name of the directory child.
-    *)
-	^subject contents collect: [ :childFileSubject | childFileSubject presenter ].
-)
 filePresentation ^ <Fragment> = (
-	(* Padder surrounding label with file name. todo-00 document *)
+	(* For a directory, show padder around label with file name; 
+        for a file, show the same padder but pad the label with file name more -
+        by dirCollapserWidth, so subdirectory and subfile name line up on the left. *)
 	^ subject isDirectory
     	ifTrue: [bar: filePresentationCore]
-        ifFalse: [bar: (row: { blank: dirCollapserWidth. filePresentationCore })]
+        ifFalse: [elastic: (bar: (row: { blank: dirCollapserWidth. filePresentationCore }))]
+)
+openOnNewPage = (
+	(* Create a new FileSubject on this presenter's model (the file with link we clicked on), 
+        then initially expand the new FileSubject, 
+        then enter the new FileSubject.
+        Entering the new FileSubject will make it the HopscotchWindow's subject,
+        instead of the original top level FileSubject, '/home/user'.
+    *)
+        
+	enterSubject:: (FileSubject onModel: subject fullFilePath) initiallyExpanded: true.
+)
+directoryPresentation ^ <Fragment> = (
+	|dirAndContentsPresentation|
+    (* Present directory as file, followed by contents in column under the file anme. *)
+    dirAndContentsPresentation:: List new add: filePresentation; addAll: directoryContentsPresenters.
+    
+    (* If collapsed (default), present a localFileName as a link; 
+        	clicking the link opens the fullFilePath in a new page 
+            by means of this FilePresenter creating a new FileSubject, 
+            and calling enterSubject on this presenter subject's fullFilePath.
+            Such enterSubject: newSubject thisFullFilePath causes the previous HopscotchWindow
+            be replaced with the presenter on the new subject.
+    	If expanded, present dirAndContentsPresentation - a localFileName, followed by entries.
+    *)
+	^ collapsed: [link: subject localFileName action: [openOnNewPage] ]
+    expanded: [column: dirAndContentsPresentation] 
+    initiallyExpanded: subject initiallyExpanded.
+    
 )
 ) : (
 )
