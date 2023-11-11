@@ -1,0 +1,37 @@
+Newspeak3
+'Root'
+class AABraveNewWorldExplorerApp packageUsing: manifest = (
+	| 
+	private AABraveNewWorldExplorer = manifest AABraveNewWorldExplorer.
+    private AAUtilities = manifest AAUtilities.
+    (* Hack to bring IDE into the app. This is insecure. ide_slot is top HopscotchWebIDE *)
+    private ide_slot = manifest HopscotchWebIDE packageUsing: manifest.
+	|
+) (
+public main: platform args: args = (
+	|
+    rootFileName <String>
+    ide
+    mixins = {}.
+    explorer 
+    |
+    
+    (* 1. ide restoreBackup. : not on this class 2. private, cannot use: ide setupIDEWith: {} using: platform. *)
+    (* Setup the ide packaged on slot ide *)
+    ide::  ide_slot ideUsingPlatform: platform.
+    ide_slot augmentIDE: ide withPlatform: platform local.
+    mixins do: [:m <MixinMirror> | ide namespacing Root at: m name put: m declaration applyToObject reflectee].
+    (* ide launch: (ide browsing HomeSubject new) *)
+    
+	explorer:: AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: AAUtilities.
+
+	(* rootFileName:: args at: 1 ifAbsent: ['/home/user/']. *)
+	rootFileName:: args size > 0 
+    	ifTrue: [args at: 1]
+        ifFalse: ['/home/user/'].
+    
+    platform hopscotch core HopscotchWindow
+    	openSubject: (explorer FileSubject onModel: rootFileName).
+)
+) : (
+)
