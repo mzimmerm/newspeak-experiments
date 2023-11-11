@@ -1,7 +1,7 @@
 Newspeak3
 'Root'
-class AABraveNewWorldExplorer usingPlatform: platform ide: ide 
-  (* :exemplar: AABraveNewWorldExplorer usingPlatform: platform ide: ide. *)
+class AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: utilitiesClass 
+  (* :exemplar: AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: AAUtilities. *)
   = (
 	(* Modified example from: https://newspeaklanguage.org/ns101/ns101.html *)
 	|
@@ -13,7 +13,8 @@ class AABraveNewWorldExplorer usingPlatform: platform ide: ide
     private Color = platform graphics Color.
     
     (* import utilities *)
-    private utilities = (ide namespacing manifest AAUtilities) usingPlatform: platform.
+    (* private utilities = (ide namespacing manifest AAUtilities) usingPlatform: platform. *)
+    private utilities = utilitiesClass usingPlatform: platform.
     private files = utilities Files new.
     private filesMock = utilities FilesMock using: files FilesystemBase.
     private FilePath = files FilePath.
@@ -80,9 +81,9 @@ public title ^ <String> = (
 )
 public class FilePresenter onSubject: subject = Presenter onSubject: subject (
 	|
-    (* Width of the image representing the 'collapseIcon' and 'expandIcon'.
-    	Leaf file presenters will be shitfter to the right by blank: dirCollapserWidth
-        for sibling dirs and files to line up
+    (* Width of the image representing the 'collapseIcon' and 'expandIcon' > and v.
+    	Leaf file presenters will be shifted to the right by blank: dirCollapserWidth
+        so that sibling dirs (which have the > or v image) and files (which do not have the image) do line up.
     *)
     dirCollapserWidth = 10.
     |
@@ -159,17 +160,30 @@ directoryPresentation ^ <Fragment> = (
     dirAndContentsPresentation:: List new add: filePresentation; addAll: directoryContentsPresenters.
     
     (* If collapsed (default), present a localFileName as a link; 
-        	clicking the link opens the fullFilePath in a new page 
-            by means of this FilePresenter creating a new FileSubject, 
-            and calling enterSubject on this presenter subject's fullFilePath.
+        	clicking the link opens this presenter' ~subject fullFilePath~ in a new page 
+            by means of 
+            - this FilePresenter calling ~openOnNewPage~, which:
+            - creates a new ~FileSubject onModel: subject FullFilePath~, 
+              and calls enterSubject on this presenter subject's fullFilePath.
             Such enterSubject: newSubject thisFullFilePath causes the previous HopscotchWindow
             be replaced with the presenter on the new subject.
-    	If expanded, present dirAndContentsPresentation - a localFileName, followed by entries.
+    	If expanded, present  ( in the current HopscotchWindow),
+        dirAndContentsPresentation - a localFileName, followed by entries.
     *)
 	^ collapsed: [link: subject localFileName action: [openOnNewPage] ]
     expanded: [column: dirAndContentsPresentation] 
     initiallyExpanded: subject initiallyExpanded.
     
+)
+helpText ^<AmpleforthFragment> = (
+	(* todo: this does not seem to be on the ? on the application. Place it there. *)
+	|mapping = Map new.|
+    mapping
+    	at: #fileBrowserClose put: closeHelp.
+    ^ ampleforth: '
+    <b>Sample file browser</b>
+    '
+    mapping: mapping.
 )
 ) : (
 )
