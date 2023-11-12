@@ -1,7 +1,7 @@
 Newspeak3
 'Root'
-class AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: utilitiesClass 
-  (* :exemplar: AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: AAUtilities. *)
+class AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: utilitiesClass andIDE: ide
+  (* :exemplar: AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: AAUtilities andIDE: ide. *)
   = (
 	(* Modified example from: https://newspeaklanguage.org/ns101/ns101.html *)
 	|
@@ -22,6 +22,9 @@ class AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: utiliti
 	(* single instance of filesystemMock. All FilePath creations are delegated to it *)
 	private filesystemMock = FilesystemMock usingUtilityFiles: files.
 
+	(* import ProgrammingPresenter, needs IDE *)
+    private ProgrammingPresenter = ide browsing ProgrammingPresenter.
+    
     (* private webFiles = ide webFiles. private WebFilesFolder = webFiles Folder. *)
 	|
 ) (
@@ -79,7 +82,13 @@ public title ^ <String> = (
     )
 ) : (
 )
-public class FilePresenter onSubject: subject = Presenter onSubject: subject (
+public class FilePresenter onSubject: subject = ProgrammingPresenter onSubject: subject (
+(* public class FilePresenter onSubject: subject = Presenter onSubject: subject ( *)
+(* public class FilePresenter onSubject: subject = ProgrammingPresenter onSubject: subject ( *)
+(* Note: ProgrammingPresenter comes as part of the IDE itself, not part of the general Hopscotch 
+             framework that is part of the basic platform. This makes our application IDE-dependent! 
+             We can’t deploy it unless we include the IDE explicitly in our application. 
+*)
 	|
     (* Width of the image representing the 'collapseIcon' and 'expandIcon' > and v.
     	Leaf file presenters will be shifted to the right by blank: dirCollapserWidth
@@ -154,6 +163,16 @@ openOnNewPage = (
         
 	enterSubject:: (FileSubject onModel: subject fullFilePath) initiallyExpanded: true.
 )
+helpText ^<AmpleforthFragment> = (
+	(* todo: this does not seem to be on the ? on the application. Place it there. *)
+	|mapping = Map new.|
+    mapping
+    	at: #fileBrowserClose put: closeHelp.
+    ^ ampleforth: '
+    <b>Sample file browser</b>
+    '
+    mapping: mapping.
+)
 directoryPresentation ^ <Fragment> = (
 	|dirAndContentsPresentation|
     (* Present directory as file, followed by contents in column under the file anme. *)
@@ -170,20 +189,45 @@ directoryPresentation ^ <Fragment> = (
     	If expanded, present  ( in the current HopscotchWindow),
         dirAndContentsPresentation - a localFileName, followed by entries.
     *)
-	^ collapsed: [link: subject localFileName action: [openOnNewPage] ]
-    expanded: [column: dirAndContentsPresentation] 
+	^ collapsed: [
+    		(* keep: without filePresenterMenu - link: subject localFileName action: [openOnNewPage] *)
+            row: {
+            	link: subject localFileName action: [openOnNewPage].
+                filler.
+                dropDownMenu: [filePresenterMenu]
+                }               
+            ]
+    expanded: [
+    		column: dirAndContentsPresentation
+            ] 
     initiallyExpanded: subject initiallyExpanded.
     
 )
-helpText ^<AmpleforthFragment> = (
-	(* todo: this does not seem to be on the ? on the application. Place it there. *)
-	|mapping = Map new.|
-    mapping
-    	at: #fileBrowserClose put: closeHelp.
-    ^ ampleforth: '
-    <b>Sample file browser</b>
-    '
-    mapping: mapping.
+respondToShowImplementation = (
+	(* calls super browseClass: to inspect self class=FilePresenter, super is ProgrammingPresenter *)
+    browseClass: class.
+)
+respondToInspectPresenter = (
+	(* calls super inspectObject: which shows UI inspector on
+        self=aFilePresenter.
+        super is ProgrammingPresenter 
+    *)
+    inspectObject: self.
+)
+filePresenterMenu = (
+	(* Add a menu, calling methods from super ProgrammingPresenter. 
+       The menu won’t do anything you’d do in a regular application. 
+        Rather, it will do something cool, that isn’t easily done in a traditional IDE: The menu will 
+        show an object inspector on the live FilePresenter instance which manages the FilePath UI!
+        
+        Running the respondToInspectPresenter respectively the respondToShowImplementation 
+        replaces the application 'window' by the 'window' of the object presenter respectively the class presenter 
+	*)
+    
+    ^ menuWithLabelsAndActions: {
+    		{'Inspect Presenter' . [respondToInspectPresenter]}.
+            {'Show Implementation' . [respondToShowImplementation]}.
+            }
 )
 ) : (
 )

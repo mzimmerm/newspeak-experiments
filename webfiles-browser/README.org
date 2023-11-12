@@ -41,17 +41,11 @@ private filesystemMock = FilesystemMock usingUtilityFiles: files.
 root:: FilePath for: '/home/user/' inFilesystem: filesystemMock.
 level1Entries:: root entries.
 level1FullPaths:: level1Entries collect: [:filePath | (filePath fullFilePath)].
+(* result should be instanceoff _Array, showing 4 filePath entries *)
 #+end_example
 
 
 * 2. Top Workspace UI : Run Explorer UI: In HopscotchWindow openSubject: AABraveNewWorldExplorer FileSubject
-
-#+name: old-delete
-#+begin_example
-|explorer| 
-explorer:: AABraveNewWorldExplorer usingPlatform: platform ide: ide.
-hopscotch core HopscotchWindow openSubject: ((explorer FileSubject) onModel: '/home/user/').
-#+end_example
 
 #+open-explorer-in-HopscotchWindow
 #+begin_example
@@ -72,3 +66,27 @@ Evaluating it shows two things:
 public createPresenter ^ <Presenter> = (
 	^FilePresenter onSubject: self.
     )
+
+
+* 3. Top Workspace UI : Run Explorer UI extending ProgrammingPresenter from IDE: In HopscotchWindow openSubject: AABraveNewWorldExplorer FileSubject
+
+#+open-explorer-in-HopscotchWindow
+#+begin_example
+|explorer utilitiesClass = ide namespacing manifest AAUtilities.| 
+explorer:: AABraveNewWorldExplorer usingPlatform: platform andUtilitiesClass: utilitiesClass andIDE: ide.
+hopscotch core HopscotchWindow openSubject: ((explorer FileSubject) onModel: '/home/user/').
+#+end_example
+
+Evaluating it shows two things:
+
+- result of evaluation: instance of HopscotchWindow (with slots)
+- The HopscotchWindow bar (clock, home, reload, help) with a single label (/home/user/) appended from FilePresenter#define
+
+
+[[file:img/Notes.org-explorer-1.png]]
+
+
+public createPresenter ^ <Presenter> = (
+	^FilePresenter onSubject: self.
+    )
+    
