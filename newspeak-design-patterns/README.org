@@ -1,0 +1,25 @@
+* About experiments in this project
+
+This project should accumulate design patterns in Newspeak.
+
+* Singleton pattern
+
+#+begin_src 
+  private class AASingleton new = (
+  |
+  private payload
+  private instance
+  |     
+  ) (
+    public stateChange: payload = (
+      self payload: payload.
+    )
+  ) : (
+  public instance ^<AASingleton> = (
+    instance = nil
+      ifTrue: [
+        instance: AASingleton new.
+      ].
+    ^ instance.
+  )
+#+end_src

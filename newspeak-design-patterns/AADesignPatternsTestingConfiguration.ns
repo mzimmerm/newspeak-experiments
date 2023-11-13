@@ -1,0 +1,32 @@
+Newspeak3
+'Root'
+class AADesignPatternsTestingConfiguration packageTestsUsing: manifest = (
+	(* Equivalent to primary factory ~MyModuleLibrary#packageLibraryUsing: manifest~ 
+        which                      should store on slot the Module class of the packaged module ~MyModule~, 
+        this primary factory should store on slot the Testing class ~AADesignPatternsTesting~.
+    *)    
+	|
+	AADesignPatternsTesting = manifest AADesignPatternsTesting.
+    AASingleton = manifest AASingleton.
+	|
+) (
+public testModulesUsingPlatform: platform minitest: minitest = (
+	(* Equivalent to instance method ~MyModuleLibrary#buildUsing: platform~ 
+        which should create and answer the packaged module ~MyModule~, 
+        this instance method should create and answer a TUPPLE Testing instances ~{instanceOfAADesignPatternsTesting... or more if applicable}~.
+        
+        Upon clicking [run tests] in the IDE of this class, the framework does the following with the returned ~testingInstance~:
+        - For each inner class, run all instance methods which name starts with 'test'
+    *)    
+	|
+    testingInstance
+    Map = platform collections Map.
+    testedClassesMap = Map new.
+    | 
+    testedClassesMap at: #AASingleton put: AASingleton.
+    
+    testingInstance:: AADesignPatternsTesting usingPlatform: platform testFramework: minitest testedClassesMap: testedClassesMap.
+    ^{testingInstance}.
+)
+) : (
+)

@@ -1,0 +1,51 @@
+Newspeak3
+'Root'
+class AADesignPatternsTesting usingPlatform: platform testFramework: minitest testedClassesMap: testedClassesMap <Map>
+	(* :exemplar:  AADesignPatternsTesting usingPlatform: platform testFramework: ide minitest testedClassesMap: (Map new at: #AASingleton put: AASingleton new; yourself) *)
+	= (
+	|    
+    (* import base class of inner Test classes *)
+	private TestContext = minitest TestContext.
+
+	(* import message and not understood *)
+	private Message = platform kernel Message.
+	private MessageNotUnderstood = platform kernel MessageNotUnderstood.
+    
+    (* import misc classes used in inner Test classes *)
+	private StringBuilder = platform kernel StringBuilder.
+	private Map = platform collections Map.
+    
+    (* slots *)
+    (* This slot should collect all tested classes imported from manifest and passed here
+        when this instance is created in ~TestingConfiguration#packageTestsUsing: manifest~.
+        This is needed if we want to keep ~public class SingletonTests = TestContext~ simple
+        with only new (rather than packaging it ... somehow).
+    *)
+    private testedClassesMap = testedClassesMap.
+	|
+) (
+public class SingletonTests = TestContext (
+	(* Class for Singleton testing methods*)
+    |
+    (* Singleton class tested, provided from manifest, to Configuration, to testedClassesMap top class slot *)
+    AASingleton = testedClassesMap at: #AASingleton.
+    |
+) (
+public testCreateSingletonTwice = (
+	|first second|
+    first::  AASingleton getInstance.
+    second:: AASingleton getInstance.
+    
+    assert: first = second.
+)
+) : (
+TEST_CONTEXT = ()
+)
+public class TestSubjects = (
+	(* Holds a bunch of inner classes which we test against *)
+    (* todo-00 : add a newly created AnotherSingleton and test against it *)
+) (
+) : (
+)
+) : (
+)

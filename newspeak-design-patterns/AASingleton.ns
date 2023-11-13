@@ -1,0 +1,28 @@
+Newspeak3
+'Root'
+class AASingleton new 
+	(* NOOO exemplar AASingleton new *)
+	= (
+ 	 |
+  	private payload
+  	private instance
+  	|     
+) (
+public stateChange: payload = (
+		self payload: payload.
+	)
+) : (
+public getInstance ^<AASingleton> = (
+   |newOrOldInstance|
+   newOrOldInstance:: new.
+
+	(*
+	instance = nil
+	ifTrue: [
+		instance: AASingleton new.
+	].
+	^ instance.
+    *)
+    ^ newOrOldInstance.
+)
+)
