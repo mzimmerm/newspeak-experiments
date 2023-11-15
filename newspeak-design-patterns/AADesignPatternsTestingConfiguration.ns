@@ -1,17 +1,28 @@
 Newspeak3
 'Root'
 class AADesignPatternsTestingConfiguration packageTestsUsing: manifest = (
-	(* Equivalent to primary factory ~MyModuleLibrary#packageLibraryUsing: manifest~ 
-        which                      should store on slot the Module class of the packaged module ~MyModule~, 
-        this primary factory should store on slot the Testing class ~AADesignPatternsTesting~.
+	(* Runs tests in AADesignPatternsTesting.
+    
+        Clicking the [run tests] runs all public test methods in AADesignPatternsTesting.
+    
+        Equivalent to primary factory ~MyModuleLibrary#packageLibraryUsing: manifest~ 
+        which                      typically stores on slot the Module class of the packaged module ~MyModule~, 
+        this primary factory typically stores on slot the Testing class ~AADesignPatternsTesting~,
+          as well as top level classes that are tested.
     *)    
 	|
+    (* imports the Testing class, and the tested AAModuleUsingSingleton. *)
 	AADesignPatternsTesting = manifest AADesignPatternsTesting.
-    AASingleton = manifest AASingleton.
+    AAModuleUsingSingleton = manifest AAModuleUsingSingleton.
 	|
 ) (
 public testModulesUsingPlatform: platform minitest: minitest = (
-	(* Equivalent to instance method ~MyModuleLibrary#buildUsing: platform~ 
+	(* Returns a Tuple of Testing instances which are run when [run tests] is clicked 
+        in the UI beside this Configuration ~AADesignPatternsTestingConfiguration~.
+        
+        Currently returns and runs tests in ~AADesignPatternsTesting~
+    
+        Equivalent to instance method ~MyModuleLibrary#buildUsing: platform~ 
         which should create and answer the packaged module ~MyModule~, 
         this instance method should create and answer a TUPPLE Testing instances ~{instanceOfAADesignPatternsTesting... or more if applicable}~.
         
@@ -23,7 +34,7 @@ public testModulesUsingPlatform: platform minitest: minitest = (
     Map = platform collections Map.
     testedClassesMap = Map new.
     | 
-    testedClassesMap at: #AASingleton put: AASingleton.
+    testedClassesMap at: #AAModuleUsingSingleton put: AAModuleUsingSingleton.
     
     testingInstance:: AADesignPatternsTesting usingPlatform: platform testFramework: minitest testedClassesMap: testedClassesMap.
     ^{testingInstance}.

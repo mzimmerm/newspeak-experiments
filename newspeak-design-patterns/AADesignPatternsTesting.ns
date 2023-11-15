@@ -1,7 +1,7 @@
 Newspeak3
 'Root'
 class AADesignPatternsTesting usingPlatform: platform testFramework: minitest testedClassesMap: testedClassesMap <Map>
-	(* :exemplar:  AADesignPatternsTesting usingPlatform: platform testFramework: ide minitest testedClassesMap: (Map new at: #AASingleton put: AASingleton new; yourself) *)
+	(* :exemplar:  AADesignPatternsTesting usingPlatform: platform testFramework: ide minitest testedClassesMap: (Map new at: #AAModuleUsingSingleton put: AAModuleUsingSingleton new; yourself) *)
 	= (
 	|    
     (* import base class of inner Test classes *)
@@ -25,16 +25,38 @@ class AADesignPatternsTesting usingPlatform: platform testFramework: minitest te
 	|
 ) (
 public class SingletonTests = TestContext (
-	(* Class for Singleton testing methods*)
+	(* Class holds testing methods for Singleton*)
     |
-    (* Singleton class tested, provided from manifest, to Configuration, to testedClassesMap top class slot *)
-    AASingleton = testedClassesMap at: #AASingleton.
+    (* Tested class holds the singleton instance on slot. 
+        Flows from from manifest, to Configuration, to testedClassesMap top class slot 
+     *)
+    AAModuleUsingSingleton = testedClassesMap at: #AAModuleUsingSingleton.
+    aaModuleUsingSingleton = AAModuleUsingSingleton new.
     |
 ) (
+public testCreateSingletonTwiceAgain = (
+	|first second|
+     (* The 2 lines below call and return result of ~AASingleton getInstance~ *)
+    first::  aaModuleUsingSingleton client1OfSingleton.
+    second::  aaModuleUsingSingleton client3OfSingletonUsedInNested.
+    
+    assert: first = second.
+)
+public testCreateSingletonTwiceBREAKING_SINGLETON = (
+	|first second|
+     (* The first line below call and return result of ~AASingleton getInstance~,
+        the second line creates ~AASingleton new~ 
+     *)
+    first::  aaModuleUsingSingleton client1OfSingleton.
+    second::  aaModuleUsingSingleton client4OfSingletonBreakingSingleton.
+    
+    assert: first = second.
+)
 public testCreateSingletonTwice = (
 	|first second|
-    first::  AASingleton getInstance.
-    second:: AASingleton getInstance.
+     (* The 2 lines below call and return result of ~AASingleton getInstance~ *)
+    first::  aaModuleUsingSingleton client1OfSingleton.
+    second::  aaModuleUsingSingleton client2OfSingleton.
     
     assert: first = second.
 )

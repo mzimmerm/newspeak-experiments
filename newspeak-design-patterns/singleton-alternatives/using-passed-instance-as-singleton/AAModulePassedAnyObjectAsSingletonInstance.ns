@@ -1,0 +1,32 @@
+Newspeak3
+'Root'
+class AAModulePassedAnyObjectAsSingletonInstance usingObjectAsSingletonInstance: instance <AAAnyObjectAsSingletonInstance> = (
+    |
+	private singletonInstance <AAAnyObjectAsSingletonInstance> = instance.
+	|
+) (
+
+  (* Nested class, we want to show singleton can be used there *)
+  class NestedUsingSingleton = (
+	|
+	(* Only to check accessibility *)
+	public nestedClassSlotWithSingletonInstance = singletonInstance.
+	|
+  ) (
+  ) : (
+)
+public client1OfSingleton ^ <AAAnyObjectAsSingletonInstance> = (
+    ^ singletonInstance.
+)
+public client2OfSingleton ^ <AAAnyObjectAsSingletonInstance> = (
+    ^ singletonInstance.
+)
+public client3OfSingletonUsedInNested = (
+	^ NestedUsingSingleton new nestedClassSlotWithSingletonInstance.
+)
+public client4OfSingletonBreakingSingleton = (
+	(* BREAKING SINGLETON ?? NOT *)
+    singletonInstance = AAAnyObjectAsSingletonInstance new.
+)
+) : (
+)

@@ -1,0 +1,64 @@
+Newspeak3
+'Root'
+class AAModuleUsingSingleton = (
+	(* Sample module which declares and uses a singleton AASingleton. *)
+	|
+    (* Holder of the singleton instance for this module. 
+    	Anywhere in code in this module, ~modulesSingletonInstance~ can be referenced
+    *)
+	private modulesSingletonInstance <AASingleton>
+	|
+) (
+private class AASingleton new = (
+ 	 |
+  	private payload
+  	|     
+) (
+public stateChange: payload = (
+	(* Sets the payload that may be carried by this singleton. *)
+	self payload: payload.
+)
+) : (
+public getInstance ^<AASingleton> = (
+	(* Gets instance of singleton, and stores in on top level module's 
+    	slot ~AAModuleUsingSingleton#modulesSingletonInstance~.
+    *)    
+	modulesSingletonInstance = nil
+	ifTrue: [
+		modulesSingletonInstance: AASingleton new.
+	].
+	^ modulesSingletonInstance.
+   )
+)
+class NestedUsingSingleton = (
+	|
+	public nestedClassSlotWithSingletonInstance = AASingleton getInstance.
+	|
+) (
+) : (
+)
+public client1OfSingleton ^ <AASingleton> = (
+	(* Client that needs a singleton. 
+    	For testing AASingleton, gets and returns the singleton instance.
+    *)
+    |gotInstance|
+    gotInstance:: AASingleton getInstance.
+    ^ gotInstance.
+)
+public client2OfSingleton ^ <AASingleton> = (
+	(* Another client that needs a singleton. 
+    	For testing AASingleton, gets and returns the singleton instance.
+    *)
+    |gotInstance|
+    gotInstance:: AASingleton getInstance.
+    ^ gotInstance.
+)
+public client3OfSingletonUsedInNested = (
+	^ NestedUsingSingleton new nestedClassSlotWithSingletonInstance.
+)
+public client4OfSingletonBreakingSingleton = (
+	(* BREAKING SINGLETON *)
+    modulesSingletonInstance = AASingleton new.
+)
+) : (
+)
