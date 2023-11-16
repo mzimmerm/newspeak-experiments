@@ -1,7 +1,8 @@
 Newspeak3
 'Root'
 class AADesignPatternsTesting usingPlatform: platform testFramework: minitest testedClassesMap: testedClassesMap <Map>
-	(* :exemplar:  AADesignPatternsTesting usingPlatform: platform testFramework: ide minitest testedClassesMap: (Map new at: #AAModuleUsingSingleton put: AAModuleUsingSingleton new; yourself) *)
+	(* :NOexemplar:  AADesignPatternsTesting usingPlatform: platform testFramework: ide minitest testedClassesMap: (Map new at: #AAModuleUsingSingleton put: AAModuleUsingSingleton new; yourself) *)
+    (* Ironically, presence of the exemplar above triggers out errors related to missing exemplars on AASingleton, but any attempts to add them fail. *)
 	= (
 	|    
     (* import base class of inner Test classes *)
@@ -10,8 +11,9 @@ class AADesignPatternsTesting usingPlatform: platform testFramework: minitest te
 	(* import message and not understood *)
 	private Message = platform kernel Message.
 	private MessageNotUnderstood = platform kernel MessageNotUnderstood.
+    private Exception = platform kernel Exception.
     
-    (* import misc classes used in inner Test classes *)
+    (* import misc classes used in inner Tests classes *)
 	private StringBuilder = platform kernel StringBuilder.
 	private Map = platform collections Map.
     
@@ -24,7 +26,7 @@ class AADesignPatternsTesting usingPlatform: platform testFramework: minitest te
     private testedClassesMap = testedClassesMap.
 	|
 ) (
-public class SingletonTests = TestContext (
+public class SingletonTests (* :exemplar: SingletonTests new *) = TestContext (
 	(* Class holds testing methods for Singleton*)
     |
     (* Tested class holds the singleton instance on slot. 
@@ -34,24 +36,6 @@ public class SingletonTests = TestContext (
     aaModuleUsingSingleton = AAModuleUsingSingleton new.
     |
 ) (
-public testCreateSingletonTwiceAgain = (
-	|first second|
-     (* The 2 lines below call and return result of ~AASingleton getInstance~ *)
-    first::  aaModuleUsingSingleton client1OfSingleton.
-    second::  aaModuleUsingSingleton client3OfSingletonUsedInNested.
-    
-    assert: first = second.
-)
-public testCreateSingletonTwiceBREAKING_SINGLETON = (
-	|first second|
-     (* The first line below call and return result of ~AASingleton getInstance~,
-        the second line creates ~AASingleton new~ 
-     *)
-    first::  aaModuleUsingSingleton client1OfSingleton.
-    second::  aaModuleUsingSingleton client4OfSingletonBreakingSingleton.
-    
-    assert: first = second.
-)
 public testCreateSingletonTwice = (
 	|first second|
      (* The 2 lines below call and return result of ~AASingleton getInstance~ *)
@@ -60,8 +44,28 @@ public testCreateSingletonTwice = (
     
     assert: first = second.
 )
+public testCreateSingletonTwiceIncludingFromNested = (
+	|first second|
+     (* The 2 lines below call and return result of ~AASingleton getInstance~ *)
+    first::  aaModuleUsingSingleton client1OfSingleton.
+    second::  aaModuleUsingSingleton client3OfSingletonUsedInNested.
+    
+    assert: first = second.
+)
+public testCreateSingletonUsingNew = (
+	|singletonCreatedUsingNew singletonUsingGetInstance|
+     (* It is legal, although not recommended, that the first creation of singleton uses new. *)
+    singletonCreatedUsingNew::  aaModuleUsingSingleton client4OfSingletonCreatedUsingNew.
+    singletonUsingGetInstance::  aaModuleUsingSingleton client1OfSingleton.
+    
+     (* Instance using ~new~ should be the same as using getInstance. *)
+    assert: singletonCreatedUsingNew = singletonUsingGetInstance.
+    
+    (* However, second invocation of singleton ~new~ should fail. *)
+    should: [aaModuleUsingSingleton client4OfSingletonCreatedUsingNew] signal: Exception. 
+)
 ) : (
-TEST_CONTEXT = ()
+TEST_CONTEXT (* :exemplar: SingletonTests TEST_CONTEXT *) = ()
 )
 public class TestSubjects = (
 	(* Holds a bunch of inner classes which we test against *)

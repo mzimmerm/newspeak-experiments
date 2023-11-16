@@ -5,15 +5,15 @@ class AAModulePassedAnyObjectAsSingletonInstance usingObjectAsSingletonInstance:
 	private singletonInstance <AAAnyObjectAsSingletonInstance> = instance.
 	|
 ) (
-
-  (* Nested class, we want to show singleton can be used there *)
-  class NestedUsingSingleton = (
+class NestedUsingSingleton = (
 	|
-	(* Only to check accessibility *)
+	(* Declaring this slot is convoluted only to check accessibility.  
+       Code in this class could use AAModule's singleton slot directly.
+    *)
 	public nestedClassSlotWithSingletonInstance = singletonInstance.
 	|
   ) (
-  ) : (
+) : (
 )
 public client1OfSingleton ^ <AAAnyObjectAsSingletonInstance> = (
     ^ singletonInstance.
@@ -24,7 +24,7 @@ public client2OfSingleton ^ <AAAnyObjectAsSingletonInstance> = (
 public client3OfSingletonUsedInNested = (
 	^ NestedUsingSingleton new nestedClassSlotWithSingletonInstance.
 )
-public client4OfSingletonBreakingSingleton = (
+public client4OfSingletonUsingNew = (
 	(* BREAKING SINGLETON ?? NOT *)
     singletonInstance = AAAnyObjectAsSingletonInstance new.
 )

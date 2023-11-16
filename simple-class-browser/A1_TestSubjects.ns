@@ -1,0 +1,20 @@
+Newspeak3
+'Root'
+class A1_TestSubjects = (
+) (
+class Nested1 = (
+	|
+	nested1Slot1
+	|
+) (
+) : (
+)
+class Nested2 = (
+	|
+	nested2Slot1
+	|
+) (
+) : (
+)
+) : (
+)

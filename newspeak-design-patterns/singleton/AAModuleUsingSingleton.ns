@@ -1,6 +1,6 @@
 Newspeak3
 'Root'
-class AAModuleUsingSingleton = (
+class AAModuleUsingSingleton (* :exemplar: AAModuleUsingSingleton new *) = (
 	(* Sample module which declares and uses a singleton AASingleton. *)
 	|
     (* Holder of the singleton instance for this module. 
@@ -10,16 +10,29 @@ class AAModuleUsingSingleton = (
 	|
 ) (
 private class AASingleton new = (
- 	 |
+	(*
+    The singleton class is declared nested in and used by ~AAModuleUsingSingleton~.
+    The instance is held on the outer's slot  ~AAModuleUsingSingleton#modulesSingletonInstance~.
+    
+    Problem: Making this ~new~ primary factory private does NOT prevent code in the outer
+    ~AAModuleUsingSingleton~ from calling ~AASingleton new~ all over again, because code in 
+    class ~AAModuleUsingSingleton~ has access to all it's members 
+    (including nested class AASingleton new).
+    
+    Solution: We  signal Error if instance was already set (by calling ~new~ or ~getInstance~!).
+    *)
+ 	|
   	private payload
-  	|     
+  	|
+    modulesSingletonInstance isNil ifFalse: [Error signal.].
+    modulesSingletonInstance: self.
 ) (
 public stateChange: payload = (
 	(* Sets the payload that may be carried by this singleton. *)
 	self payload: payload.
 )
 ) : (
-public getInstance ^<AASingleton> = (
+public getInstance ^<AASingleton> (* :exemplar: AASingleton getInstance *) = (
 	(* Gets instance of singleton, and stores in on top level module's 
     	slot ~AAModuleUsingSingleton#modulesSingletonInstance~.
     *)    
@@ -32,6 +45,9 @@ public getInstance ^<AASingleton> = (
 )
 class NestedUsingSingleton = (
 	|
+    (* public getInstance is accessible here, but ~AASingleton new~ 
+        would NOT be (good, we cannot make a mistake). 
+    *)
 	public nestedClassSlotWithSingletonInstance = AASingleton getInstance.
 	|
 ) (
@@ -56,9 +72,12 @@ public client2OfSingleton ^ <AASingleton> = (
 public client3OfSingletonUsedInNested = (
 	^ NestedUsingSingleton new nestedClassSlotWithSingletonInstance.
 )
-public client4OfSingletonBreakingSingleton = (
-	(* BREAKING SINGLETON *)
+public client4OfSingletonCreatedUsingNew = (
+	(* Attempt to create ~AASingleton new~ should only work once,  
+        then ~Error signal~ on subsequent creation. See  ~AASingleton new~.
+    *)
     modulesSingletonInstance = AASingleton new.
+    ^ modulesSingletonInstance.
 )
 ) : (
 )

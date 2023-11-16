@@ -5,7 +5,7 @@ class AAAnyObjectAsSingletonInstance new = (
 	private payload
 	|
   ) (
-  public stateChange: payload = (
+public stateChange: payload = (
 	(* Sets the payload that may be carried by this object. *)
 	self payload: payload.
   )

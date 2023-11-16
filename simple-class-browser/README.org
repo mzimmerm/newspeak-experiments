@@ -1,0 +1,36 @@
+* About this project, simple-class-browser
+
+This project is an experiment which creates a much simplified version of Newspeak ~Browsing~ class, only for browsing classes and their nested classes.
+
+
+* Classes developed
+
+* A1_SimpleClassBrowser
+
+Core class, method ~browseClass: klass~ instantiates a ~ClassMirror~ and asks for class name.
+
+
+* Errors to report
+
+This shows as 'out' at the end of the page. It shows only after I expand the Tests class in the message. After that, it keeps happening until reload.
+
+Noclass exemplar for method TEST_CONTEXT in class ClassDeclarationMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
+Noclass exemplar for method TEST_CONTEXT in class ClassHeaderMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
+Noclass exemplar for method TEST_CONTEXT in class ClassMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
+Noclass exemplar for method TEST_CONTEXT in class MethodMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
+Noclass exemplar for method TEST_CONTEXT in class SlotDeclarationMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
+Noclass exemplar for method yourclass in class ClassMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
+
+* 1. Top Workspace Non-UI: Get classes on level 1.
+
+#+name: workspace-top
+#+begin_example
+|
+A1_SimpleClassBrowser = ide namespacing manifest A1_SimpleClassBrowser.
+browser = A1_SimpleClassBrowser usingPlatform: platform webIDE: ide.
+|
+
+browser browseClass: A1_SimpleClassBrowser.
+
+#+end_example
+

@@ -1,0 +1,15 @@
+Newspeak3
+'Root'
+class A1_SimpleClassBrowser usingPlatform: platform <Platform> webIDE: ide <HopscotchWebIDE> = (
+	|
+	slot1
+	slot2
+	|
+) (
+private browseClass: klass <Behavior | ClassDeclarationMirro> = (
+	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
+    |klassDeclaration = (ClassMirror reflecting: klass) mixin declaration.|
+	klassDeclaration name out. 
+)
+) : (
+)
