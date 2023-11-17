@@ -1,6 +1,6 @@
 Newspeak3
 'Root'
-class AAWorkspaceSnippets usingPlatform: platform ide: ide = (
+class A2_WorkspaceSnippets usingPlatform: platform ide: ide = (
 	(* 
    Role: This class role is to store and run snippets from workspace.
    
@@ -56,6 +56,25 @@ class AAWorkspaceSnippets usingPlatform: platform ide: ide = (
     public hopscotch  = platform hopscotch.
 	|
 ) (
+public discoverNewspeak = (
+|num1To100 evenNum1To100|
+
+platform
+platform collections
+platform collections List
+platform collections List new
+
+num1To100: platform collections List new.
+1 to: 100 do: [:i | num1To100 add: i].
+num1To100.
+
+evenNum1To100: platform collections List new.
+num1To100 do: [:i | (i \\ 2) = 0 ifTrue: [evenNum1To100 add: i]].
+evenNum1To100.
+
+ide
+(* todo continue *)
+)
 public openHopscotchWindowForBrowsingClass = (
 
 | browsing classMirrorForPerson objectMirrorForPersonExemplar classModel subject AAPerson manifest = ide namespacing manifest.|

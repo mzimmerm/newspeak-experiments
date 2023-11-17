@@ -1,0 +1,62 @@
+Newspeak3
+'Root'
+class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <HopscotchWebIDE> 
+(* :exemplar:  A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide. *)
+= (
+	|
+    (* imports *)
+	ClassMirror = platform mirrors ClassMirror.
+    ide = ide.
+    
+    (* functional slots *)
+    classUIs <List[ClassUI]>
+	|
+) (
+class ClassUI = (
+	|
+	classFactoryUI <ClassFactoryUI>
+    innerClassUIs <List[ClassUI]>
+    instanceMethodUIs <List[MethodUI]>
+    classMethodUIs <List[MethodUI]>
+	|
+) (
+class ClassFactoryUI = (
+	|
+	slotUIs <List[SlotUI]>
+    classFactoryDeclaration <String> (* this is code *)
+	|
+) (
+class SlotUI = (
+	|
+	slot1
+	slot2
+	|
+) (
+) : (
+)
+) : (
+)
+class MethodUI = (
+	|
+	slot1
+	slot2
+	|
+) (
+) : (
+)
+) : (
+)
+public browseClass: klass <Behavior | ClassDeclarationMirro> = (
+	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
+    (*
+    |klassDeclaration = (ClassMirror reflecting: klass) mixin declaration.|
+	klassDeclaration name out. 
+    *)
+    ide namespacing Root values do: [ :klass | | klassDeclaration |
+    	klassDeclaration:: (ClassMirror reflecting: klass) mixin declaration.
+  	    klassDeclaration name out. 
+        ].
+      
+)
+) : (
+)

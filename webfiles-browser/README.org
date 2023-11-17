@@ -29,7 +29,7 @@ Files:
 #+begin_example
 |
 root level1Entries level1FullPaths
-private utilities = (ide namespacing manifest AAUtilities) usingPlatform: platform.
+private utilities = AAUtilities usingPlatform: platform.
 private files = utilities Files new.
 private filesMock = utilities FilesMock using: files FilesystemBase.
 private FilePath = files FilePath.

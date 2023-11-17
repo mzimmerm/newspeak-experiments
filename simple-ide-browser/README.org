@@ -5,7 +5,7 @@ This project is an experiment which creates a much simplified version of Newspea
 
 * Classes developed
 
-* A1_SimpleClassBrowser
+* A1_SimpleIDEBrowser
 
 Core class, method ~browseClass: klass~ instantiates a ~ClassMirror~ and asks for class name.
 
@@ -21,16 +21,16 @@ Noclass exemplar for method TEST_CONTEXT in class MethodMirrorTests MessageNotUn
 Noclass exemplar for method TEST_CONTEXT in class SlotDeclarationMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
 Noclass exemplar for method yourclass in class ClassMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
 
-* 1. Top Workspace Non-UI: Get classes on level 1.
+
+* 1. Top Workspace Non-UI: Get classes on level 1
 
 #+name: workspace-top
 #+begin_example
 |
-A1_SimpleClassBrowser = ide namespacing manifest A1_SimpleClassBrowser.
-browser = A1_SimpleClassBrowser usingPlatform: platform webIDE: ide.
+browser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
 |
 
-browser browseClass: A1_SimpleClassBrowser.
+browser browseClass: A1_TestSubjects.
 
 #+end_example
 
