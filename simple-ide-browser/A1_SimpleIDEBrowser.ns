@@ -33,12 +33,15 @@ public class ClassBrowser forClass: klass <Behavior> = (
     (* indented browsers *)
 	factoryBrowser <FactoryBrowser>
     (* todo: finish: nestedClassesBrowsers <List[ClassBrowser]> ::= nestedClassDeclarationMirrors collect: [:nestedClassDeclarationMirror | ClassBrowser forClass: nestedClassDeclarationMirror klass]. *)
-    nestedClassesBrowsers <List[ClassBrowser]> ::= List new.
-    instanceMethodsBrowsers <List[MethodBrowser]>
-    classMethodsBrowsers <List[MethodBrowser]>    
+    nestedClassGroupBrowser <NestedClassGroupBrowser> 
+    instanceMethodGroupBrowser <MethodGroupBrowser>
+    classMethodGroupBrowser <MethodGroupBrowser>
 	|
     ) (
-public class UI new = () (
+public class UI new = (|
+    (* Only need Subject. Can get presenter and view from it *)
+    subject = ClassSubject onModel: (ClassModel new).
+|) (
 class ClassModel=() (
 public className = (
 	^ classDeclarationMirror name. 
@@ -67,6 +70,22 @@ public initiallyExpanded = (
 class ClassPresenter onSubject: subject <ClassSubject> = Presenter onSubject: subject (
 	(* todo:  *)
 ) (
+nestedClassesPresenters = (
+	(* todo: use nestedClassesBrowsers to get this. *)
+  ^ List new.
+)
+public isMyKind: f <Fragment> ^ <Boolean> = (
+	^ f isKindOfClassPresenter.
+)
+public isKindOfClassPresenter = (
+	^ true.
+)
+classPresentation = (
+	^ label: subject className.
+)
+initiallyExpanded = (
+	^ false.
+)
 public definition ^ <Fragment>  = (
 	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
     
@@ -98,89 +117,100 @@ public definition ^ <Fragment>  = (
             ] 
     initiallyExpanded: subject initiallyExpanded.
     
+    
+    (* TODO : from Browsing>>ClassPresenter#definition : add the individual methods helpSection, headingDefinition, lazySlotsPresenter, nestedClassesPresenter, etc
+    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
+	^column: {
+        helpSection.
+		headingDefinition.
+		lazySlotsPresenter:: subject lazySlotsSubject presenter.       
+		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassBrowser) ui subject presenter
+		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassBrowser) ui subject presenter
+		classMethodsPresenter:: subject classMethodsSubject presenter.
+	}
+    *)
 
 )
-nestedClassesPresenters = (
-	(* todo: use nestedClassesBrowsers to get this. *)
-  ^ List new.
+headingDefinition ^ <Fragment> = (
+	(* todo finish *)
+	^(column: {
+		expanded: [expandedHeadingDefinition]
+		collapsed: [classNameAndHierarchySummary].
+	}) color: (Color h: 240 s: 0.05 v: 0.9).
 )
-public isMyKind: f <Fragment> ^ <Boolean> = (
-	^ f isKindOfClassPresenter.
+helpText ^ <Fragment> = (
+
+(* todo see Browsing>>ClassPresenter#helpText *)
+  ^ampleforth: 'A class presenter for Simple IDE Browser. See  Browsing>>ClassPresenter#helpText'
 )
-public isKindOfClassPresenter = (
+) : (
+)
+) : (
+)
+public class MethodGroupBrowser new = (
+ |
+private ui = UI new.
+    
+(* indented browsers *)
+(* none *)
+ |
+) (
+class UI = (
+) (
+class MethodGroupModel new = (
+	
+) (
+) : (
+)
+class MethodGroupSubject onModel: m = Subject onModel: m (
+	
+) (
+public isMyKind: s <Subject> ^ <Boolean> = (
+	^ s isKindOfMethodGroupSubject.
+)
+public isKindOfMethodGroupSubject = (
 	^ true.
 )
-classPresentation = (
-	^ label: subject className.
-)
-initiallyExpanded = (
-	^ false.
-)
 ) : (
 )
-) : (
+class MethodGroupPresenter onSubject: s = Presenter onSubject: s (
+	
+) (
+public isMyKind: f <Fragment> ^ <Boolean> = (
+	^ f isKindOfMethodGroupPresenter.
 )
-public class FactoryBrowser new = (
-        |
-        private ui = UI new.
-    
-        (* indented browsers *)
-	    slotsBrowsers <List[SlotBrowser]>
-        factoryDeclaration <String> (* this is code *)
-	    |
-        ) (
-class UI new = () (
-class FactoryModel=() (
-) : (
+public isKindOfMethodGroupPresenter = (
+	^ true.
 )
-class FactorySubject=() (
-) : (
-)
-class FactoryPresenter=() (
 ) : (
 )
 ) : (
 )
 ) : (
 )
-public class SlotBrowser new = (
-	      |
-        private ui = UI new.
-    
-        (* indented browsers *)
-        (* none *)
-	      |
-        ) (
-public class UI new = () (
-class SlotModel=() (
+public class NestedClassGroupBrowser new = (
+ |
+private ui = UI new.
+
+(* indented browsers *)
+(* none *)
+ |
+) (
+class UI = (
+) (
+class NestedClassGroupModel new = (
+
+) (
 ) : (
 )
-class SlotSubject=() (
+class NestedClassGroupSubject onModel: m = Subject onModel: m (
+
+) (
 ) : (
 )
-class SlotPresenter=() (
-) : (
-)
-) : (
-)
-) : (
-)
-public class MethodBrowser new = (
-	      |
-        private ui = UI new.
-    
-        (* indented browsers *)
-        (* none *)
-	      |
-        ) (
-public class UI new = () (
-class MethodModel=() (
-) : (
-)
-class MethodSubject=() (
-) : (
-)
-class MethodPresenter=() (
+class NestedClassGroupPresenter onSubject: s = Presenter onSubject: s (
+
+) (
 ) : (
 )
 ) : (
