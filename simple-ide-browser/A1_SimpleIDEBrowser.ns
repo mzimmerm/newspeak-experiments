@@ -1,62 +1,249 @@
 Newspeak3
 'Root'
 class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <HopscotchWebIDE> 
-(* :exemplar:  A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide. *)
-= (
+  (* :exemplar:  A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide. *)
+  = (
 	|
     (* imports *)
+    List = platform collections List.    
 	ClassMirror = platform mirrors ClassMirror.
-    ide = ide.
+	Presenter = platform hopscotch Presenter.
+    Subject = platform hopscotch Subject.
     
-    (* functional slots *)
-    classUIs <List[ClassUI]>
+    (* slots *)
+    ide = ide.
+    classUIs <List[ClassBrowser]>
 	|
-) (
-class ClassUI = (
+  ) (
+public class ClassBrowser forClass: klass <Behavior> = (
+  	|
+    
+    (* Class slot for this browser class and all nested classes. *)
+    private klass <Behavior> = klass.
+    
+    private ui = UI new.
+    
+	(* members used by multiple models in UI and it's nested classes *)
+	private classMirror = (ClassMirror reflecting: klass).
+    private classDeclarationMirror = classMirror mixin declaration.
+
+    private nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]> =  classMirror nestedClasses.
+    private nestedClassDeclarationMirrors ::= nestedClassesGroup do: [:nestedClassDeclarationMirror | nestedClassDeclarationMirror].
+
+    (* indented browsers *)
+	factoryBrowser <FactoryBrowser>
+    (* todo: finish: nestedClassesBrowsers <List[ClassBrowser]> ::= nestedClassDeclarationMirrors collect: [:nestedClassDeclarationMirror | ClassBrowser forClass: nestedClassDeclarationMirror klass]. *)
+    nestedClassesBrowsers <List[ClassBrowser]> ::= List new.
+    instanceMethodsBrowsers <List[MethodBrowser]>
+    classMethodsBrowsers <List[MethodBrowser]>    
 	|
-	classFactoryUI <ClassFactoryUI>
-    innerClassUIs <List[ClassUI]>
-    instanceMethodUIs <List[MethodUI]>
-    classMethodUIs <List[MethodUI]>
-	|
-) (
-class ClassFactoryUI = (
-	|
-	slotUIs <List[SlotUI]>
-    classFactoryDeclaration <String> (* this is code *)
-	|
-) (
-class SlotUI = (
-	|
-	slot1
-	slot2
-	|
-) (
-) : (
+    ) (
+public class UI new = () (
+class ClassModel=() (
+public className = (
+	^ classDeclarationMirror name. 
 )
 ) : (
 )
-class MethodUI = (
-	|
-	slot1
-	slot2
-	|
+public class ClassSubject onModel: model <ClassModel> = Subject onModel: model () (
+public createPresenter = (
+	^ ClassPresenter onSubject: self.
+)
+isKindOfClassSubject = (
+	^ true.
+)
+public isMyKind: s <Subject> ^ <Boolean> = (
+    ^ isKindOfClassSubject.
+)
+public className = (
+	^ classDeclarationMirror name.
+)
+public initiallyExpanded = (
+	(* accessed from Presenter, must be public *)
+	^ false.
+)
+) : (
+)
+class ClassPresenter onSubject: subject <ClassSubject> = Presenter onSubject: subject (
+	(* todo:  *)
 ) (
-) : (
-)
-) : (
-)
-public browseClass: klass <Behavior | ClassDeclarationMirro> = (
-	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
-    (*
-    |klassDeclaration = (ClassMirror reflecting: klass) mixin declaration.|
-	klassDeclaration name out. 
+public definition ^ <Fragment>  = (
+	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
+    
+	|classAndNestedClassesPresentation|
+    (* Present directory as file, followed by contents in column under the file anme. *)
+    classAndNestedClassesPresentation:: List new add: classPresentation; addAll: nestedClassesPresenters.
+    
+    (* If collapsed (default), present a localFileName as a link; 
+        	clicking the link opens this presenter' ~subject fullFilePath~ in a new page 
+            by means of 
+            - this FilePresenter calling ~openOnNewPage~, which:
+            - creates a new ~FileSubject onModel: subject FullFilePath~, 
+              and calls enterSubject on this presenter subject's fullFilePath.
+            Such enterSubject: newSubject thisFullFilePath causes the previous HopscotchWindow
+            be replaced with the presenter on the new subject.
+    	If expanded, present  ( in the current HopscotchWindow),
+        dirAndContentsPresentation - a localFileName, followed by entries.
     *)
-    ide namespacing Root values do: [ :klass | | klassDeclaration |
-    	klassDeclaration:: (ClassMirror reflecting: klass) mixin declaration.
-  	    klassDeclaration name out. 
-        ].
-      
+	^ collapsed: [
+    		(* keep: without filePresenterMenu - link: subject localFileName action: [openOnNewPage] *)
+            row: {
+            	link: subject className action: [openOnNewPage].
+                filler.
+                (* todo dropDownMenu: [filePresenterMenu] *)
+                }               
+            ]
+    expanded: [
+    		column: classAndNestedClassesPresentation
+            ] 
+    initiallyExpanded: subject initiallyExpanded.
+    
+
 )
+nestedClassesPresenters = (
+	(* todo: use nestedClassesBrowsers to get this. *)
+  ^ List new.
+)
+public isMyKind: f <Fragment> ^ <Boolean> = (
+	^ f isKindOfClassPresenter.
+)
+public isKindOfClassPresenter = (
+	^ true.
+)
+classPresentation = (
+	^ label: subject className.
+)
+initiallyExpanded = (
+	^ false.
+)
+) : (
+)
+) : (
+)
+public class FactoryBrowser new = (
+        |
+        private ui = UI new.
+    
+        (* indented browsers *)
+	    slotsBrowsers <List[SlotBrowser]>
+        factoryDeclaration <String> (* this is code *)
+	    |
+        ) (
+class UI new = () (
+class FactoryModel=() (
+) : (
+)
+class FactorySubject=() (
+) : (
+)
+class FactoryPresenter=() (
+) : (
+)
+) : (
+)
+) : (
+)
+public class SlotBrowser new = (
+	      |
+        private ui = UI new.
+    
+        (* indented browsers *)
+        (* none *)
+	      |
+        ) (
+public class UI new = () (
+class SlotModel=() (
+) : (
+)
+class SlotSubject=() (
+) : (
+)
+class SlotPresenter=() (
+) : (
+)
+) : (
+)
+) : (
+)
+public class MethodBrowser new = (
+	      |
+        private ui = UI new.
+    
+        (* indented browsers *)
+        (* none *)
+	      |
+        ) (
+public class UI new = () (
+class MethodModel=() (
+) : (
+)
+class MethodSubject=() (
+) : (
+)
+class MethodPresenter=() (
+) : (
+)
+) : (
+)
+) : (
+)
+) : (
+)
+public browseIDEClasses = (
+      	(* Browse first 5 classes in IDE Root namespace. *)
+          |browsedCount ::=  0.|
+          	ide namespacing Root values do: [ :klass |
+      		    browsedCount < 5 
+                  	ifTrue: [
+      	    			browsedCount: browsedCount + 1.
+              
+          	    		(* core *)
+          				browseClass: klass.
+              		]
+          ]
+      )
+private browseClass: klass <Behavior | ClassDeclarationMirror> = (
+	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
+      
+    |
+    classMirror <ClassMirror> = (ClassMirror reflecting: klass).
+    classDeclarationMirror <ClassDeclarationMirror>
+    nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]>
+    |
+    classDeclarationMirror::  classMirror mixin declaration.
+    classDeclarationMirror name out. 
+    nestedClassesGroup:: classMirror nestedClasses.
+    nestedClassesGroup do: [:nestedClassDeclarationMirror | ('   ', nestedClassDeclarationMirror name) out].
+    
+    ^ classDeclarationMirror.
+    )
+private browseClassInWindow: klass <Behavior | ClassDeclarationMirror> = (
+	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
+      
+    |
+    classMirror <ClassMirror> = (ClassMirror reflecting: klass).
+    classDeclarationMirror <ClassDeclarationMirror>
+    nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]>
+    |
+    classDeclarationMirror::  classMirror mixin declaration.
+    classDeclarationMirror name out. 
+    nestedClassesGroup:: classMirror nestedClasses.
+    nestedClassesGroup do: [:nestedClassDeclarationMirror | ('   ', nestedClassDeclarationMirror name) out].
+    
+    ^ classDeclarationMirror.
+    )
+public browseIDEClassesInWindow = (
+      	(* Browse first 5 classes in IDE Root namespace. *)
+          |browsedCount ::=  0.|
+          	ide namespacing Root values do: [ :klass |
+      		    browsedCount < 5 
+                  	ifTrue: [
+      	    			browsedCount: browsedCount + 1.
+              
+          	    		(* core *)
+          				browseClass: klass.
+              		]
+          ]
+      )
 ) : (
 )

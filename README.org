@@ -1,0 +1,1 @@
+* This is the top directory for all Newspeak experiments, except Newspeak stuff in my blog in ~mzimmerm.github.io~ and directory which stores it's source, the ~newspeak-doc~

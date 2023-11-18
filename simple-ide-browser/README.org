@@ -24,13 +24,27 @@ Noclass exemplar for method yourclass in class ClassMirrorTests MessageNotUnders
 
 * 1. Top Workspace Non-UI: Get classes on level 1
 
-#+name: workspace-top
+#+name: workspace-browse-as-text
 #+begin_example
 |
-browser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
+ideBrowser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
 |
 
-browser browseClass: A1_TestSubjects.
+ideBrowser browseIDEClasses.
+
+(* browser browseClass: A1_TestSubjects. *)
+
+#+end_example
+
+#+name: workspace-browse-in-window
+#+begin_example
+|
+ideBrowser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
+klass = A1_TestSubjects.
+classBrowser = ideBrowser ClassBrowser forClass: klass.
+|
+
+platform hopscotch core HopscotchWindow openSubject: (classBrowser UI new ClassSubject onModel: klass)
 
 #+end_example
 
