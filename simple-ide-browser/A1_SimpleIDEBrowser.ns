@@ -6,14 +6,26 @@ class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <Hopsco
 	|
     (* imports *)
     List = platform collections List.    
+    Map = platform collections Map.    
 	ClassMirror = platform mirrors ClassMirror.
+
 	Presenter = platform hopscotch Presenter.
     Subject = platform hopscotch Subject.
-    Exception = platform kernel Exception.
+    
+	ProgrammingPresenter = ide browsing ProgrammingPresenter.
+    ProgrammingSubject =  ide browsing ProgrammingSubject.
+
+	Exception = platform kernel Exception.
+    Color = platform graphics Color.
     
     (* slots *)
     ide = ide.
     classUIs <List[ClassUI]> (* todo : should this be ClassGroup? *)
+    
+    (* Style *)    
+	styleHeaderPadRight <Float> = 0.0.
+    styleButtonSize <Float> = 30.
+    
 	|
   ) (
 public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|ClassDeclarationMirror> = (
@@ -29,14 +41,14 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
         ].
   
     (* todo Only need Subject. Can get presenter and view from it *)
-    subject = ClassSubject onModel: (ClassModel forClassDeclaratioMirror: classDeclarationMirror).
+    subject = ClassSubject onClassModel: (ClassModel forClassDeclarationMirror: classDeclarationMirror).
 
 	(* members used by multiple models in UI and it's nested classes *)
     (* todo-done private classDeclarationMirror = classMirror mixin declaration. *)
     
     (* instanceSide returns MixinMirror, which has API similar to ClassMirror, can get slots, nestedClasses, methods from it. TODO: WHY NOT classSide?? *)
-    private nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]> =  classDeclarationMirror instanceSide nestedClasses.
-    private nestedClassDeclarationMirrors ::= nestedClassesGroup do: [:nestedClassDeclarationMirror | nestedClassDeclarationMirror].
+    public nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]> =  classDeclarationMirror instanceSide nestedClasses.
+    public nestedClassDeclarationMirrors ::= nestedClassesGroup do: [:nestedClassDeclarationMirror | nestedClassDeclarationMirror].
 
     (* indented UIs *)
 	factoryUI <FactoryUI> (* todo : this seems replaced with headingDefinition *)
@@ -46,26 +58,61 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
     classMethodGroupUI <MethodGroupUI>    
 	|
     ) (
-public class ClassModel forClassDeclaratioMirror: mirror <ClassDeclarationMirror> = (
+public class ClassModel forClassDeclarationMirror: cdm <ClassDeclarationMirror> = (
 	(* public for use in Workspace *)
 	|
-    private classDeclaratioMirror <ClassDeclaratioMirror> = mirror.
+    private classDeclarationMirror <ClassDeclaratioMirror> = cdm.
     |
+    
+    (* Browsing version
+		public class ClassModel declaration: cd <ClassDeclarationMirror> exemplar: e <ObjectMirror | Nil> enclosing: o <ObjectMirror | Nil>  
+		= (
+		|
+		public klass <ClassDeclarationMirror> = cd.
+        	public exemplar <ObjectMirror | Nil> ::= e.
+        	enclosing_slot <ObjectMirror | Nil> ::= e isNil ifTrue: [o].
+		|
+    	assert: [cd isKindOfClassDeclarationMirror] message: 'ClassModel built upon another ClassModel?!'.
+		)   
+	*)
 ) (
-public className = (
+public name = (
 	^ classDeclarationMirror name.
+)
+public classMirror ^ <ClassDeclarationMirror> = (
+  ^classDeclarationMirror
+)
+public isKindOfClassModel ^ <Boolean>  = (
+  ^true
+)
+public = other <Object> ^ <Boolean> = (
+	other isKindOfClassModel ifFalse: [^false].
+    ^classDeclarationMirror = other classDeclarationMirror (* and: [exemplar = other exemplar]. *).
+    )
+public hash ^ <Integer> = (
+	^ classDeclarationMirror hash (* bitXor: exemplar hash *)
 )
 ) : (
 )
-public class ClassSubject onModel: model <ClassModel> = Subject onModel: model () (
+public class ClassSubject onClassModel: model <ClassModel> = ProgrammingSubject onModel: model (
+	(* Browsing>>ClassSubject has this: .
+	public class ClassSubject onClassModel: m <ClassModel> = ProgrammingSubject onModel: m (
+	  | 
+	  public exemplar <ObjectMirror> ::= classModel exemplar.
+	  lazySlotsSubject_slot  <LazySlotGroupSubject>  
+      nestedClassesSubject_slot  <NestedClassGroupSubject>
+	  methodsSubject_slot  <MethodGroupSubject>
+	  classMethodsSubject_slot  <MethodGroupSubject>
+	  objectSubject_slot <ObjectSubject>
+	  |
+	)
+	*)
+) (
 public createPresenter = (
 	^ ClassPresenter onSubject: self.
 )
 isKindOfClassSubject = (
 	^ true.
-)
-public className = (
-	^ classDeclarationMirror name.
 )
 public initiallyExpanded = (
 	(* accessed from Presenter, must be public *)
@@ -74,10 +121,51 @@ public initiallyExpanded = (
 public isMyKind: s <Subject> ^ <Boolean> = (
     ^ s isKindOfClassSubject.
 )
-) : (
+public name = (
+	^ model name.
 )
-public class ClassPresenter onSubject: subject <ClassSubject> = Presenter onSubject: subject (
-	(* todo:  *)
+public title = (
+	^name
+)
+public classMirror ^ <ClassDeclarationMirror> = (
+	^model classMirror
+)
+public enclosingClassSubjects ^ <List[ClassSubject]> = (
+	(* Browsing>>ClassSubject has:.
+	public enclosingClassSubjects ^ <List[ClassSubject]> = (
+		| them = List new. c |
+		c:: classMirror.
+		[c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass].
+		^them
+	)    
+    *)
+	| them = List new. c |
+	c:: classMirror.
+	(* [c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass]. *)
+	[c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass].
+	^them
+)
+) : (
+public onDeclaration: cd <ClassDeclarationMirror> ^ <Instance> = (
+  (* Browsing>>ClassSubject has: ^onClassModel: (ClassModel declaration: cd exemplar: nil) *)
+  ^onClassModel: (ClassModel forClassDeclarationMirror: cd (* exemplar: nil *) )
+)
+)
+public class ClassPresenter onSubject: subject <ClassSubject> = ProgrammingPresenter onSubject: subject (
+	(* Browsing>>ClassPresenter contains: .
+    class ClassPresenter onSubject: s = ProgrammingPresenter onSubject: s (
+	  |
+	  public lazySlotsPresenter <LazySlotGroupPresenter>  
+	  public nestedClassesPresenter <NestedClassGroupPresenter>
+	  public instanceMethodsPresenter <MethodGroupPresenter>
+	  public classMethodsPresenter <MethodGroupPresenter>
+	  classActionsPresenter <ClassActionsPresenter>
+	  |
+	)
+    *)
+	|
+	classActionsPresenter <ClassActionsPresenter> = smallBlank. (* todo *)
+    |
 ) (
 nestedClassesPresenters = (
 	(* todo: use nestedClassesBrowsers to get this. *)
@@ -94,11 +182,6 @@ classPresentation = (
 )
 initiallyExpanded = (
 	^ false.
-)
-helpText ^ <Fragment> = (
-
-(* todo see Browsing>>ClassPresenter#helpText *)
-  ^ampleforth: 'A class presenter for Simple IDE Browser. See  Browsing>>ClassPresenter#helpText'
 )
 public definitionORI ^ <Fragment>  = (
 	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
@@ -145,6 +228,69 @@ public definitionORI ^ <Fragment>  = (
     *)
 
 )
+expandedHeadingDefinition = (
+^filler.
+)
+classCommentSummary ^ <String> = (
+	|
+	fullComment <String> = subject classCommentText.
+	endOfFirstSentence <Integer> = fullComment indexOf: '.'.
+	firstSentence <String> = fullComment copyFrom: 1 to: endOfFirstSentence.
+	|
+	^firstSentence
+)
+classNameAndContainmentDefinition ^ <Fragment> = (
+	^column: {
+		classNameAndHierarchySummary.
+		preambleLine.
+		label: subject classCommentSummary.
+	}
+)
+classNameAndHierarchySummary = (
+	| parts <List[Fragment]> |
+	parts:: List new.
+	subject enclosingClassSubjects
+		do: [:ecs | parts add: (link: ecs name action: [enterSubject:: ecs])]
+		separatedBy: [parts add: ( label: ' in ')].
+	^column: {
+		row: {
+			smallBlank.
+			(image: ide images classIcon)
+                 height: styleButtonSize.
+			smallBlank.
+			row: parts.
+			filler.
+            classActionsPresenter.
+			smallBlank.
+			itemReferencesButtonWithAction: [browseSelector: subject name].
+			smallBlank.
+			saveButtonWithAction: [respondToSave].
+			smallBlank.
+			refreshButton.			
+			smallBlank.
+            helpButton.
+			smallBlank.
+			dropDownMenu: [classActionsMenu].
+		}
+	}
+)
+classActionsMenu = (
+	^menuWithLabelsAndActions: {
+	 	{'Save to File'. [respondToSave]}.
+		 #separator.
+		{'Inspect Mirror'. [inspectObject: subject classMirror]}.
+		{'Inspect Presenter'. [respondToInspectPresenter]}.
+		#separator.
+		{'Delete'. [respondToDelete]}.
+	}
+)
+headingDefinition ^ <Fragment> = (
+	(* todo finish *)
+	^(column: {
+		expanded: [expandedHeadingDefinition]
+		collapsed: [classNameAndHierarchySummary].
+	}) color: (Color h: 240 s: 0.05 v: 0.9).
+)
 public definition ^ <Fragment>  = (
 	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
 
@@ -179,7 +325,7 @@ public definition ^ <Fragment>  = (
     initiallyExpanded: subject initiallyExpanded.
     *)
 
-    (* TODO : from Browsing>>ClassPresenter#definition : add the individual methods helpSection, headingDefinition, lazySlotsPresenter, nestedClassesPresenter, etc *)
+    (* Browsing>>ClassPresenter#definition : add the individual methods helpSection, headingDefinition, lazySlotsPresenter, nestedClassesPresenter, etc *)
     (*
     classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
 	^column: {
@@ -195,26 +341,62 @@ public definition ^ <Fragment>  = (
 	^column: {
         helpSection.
 		headingDefinition.
-                   row: {
+        (*
+        row: {
             	link: subject className action: [openOnNewPage].
                 filler.
-                (* todo dropDownMenu: [filePresenterMenu] *)
+                dropDownMenu: [filePresenterMenu]
                 }
+        *)        
 	}
 
 )
-headingDefinition ^ <Fragment> = (
-	(* todo finish *)
-	^(column: {
-		expanded: [expandedHeadingDefinition]
-		collapsed: [classNameAndHierarchySummary].
-	}) (* color: (Color h: 240 s: 0.05 v: 0.9) *).
+classNameAndHierarchySummaryORI  = (
+	| parts <List[Fragment]> |
+	parts:: List new.
+	subject enclosingClassSubjects
+		do: [:ecs | parts add: (link: ecs name action: [enterSubject:: ecs])]
+		separatedBy: [parts add: ( label: ' in ')].
+	^column: {
+		row: {
+			smallBlank.
+			(image: ide images classIcon)
+                 height: styleButtonSize.
+			smallBlank.
+			row: parts.
+			filler.
+            classActionsPresenter.
+			smallBlank.
+			itemReferencesButtonWithAction: [browseSelector: subject name].
+			smallBlank.
+			saveButtonWithAction: [respondToSave].
+			smallBlank.
+			refreshButton.			
+			smallBlank.
+            helpButton.
+			smallBlank.
+			dropDownMenu: [classActionsMenu].
+		}
+	}
 )
-classNameAndHierarchySummary = (
-^filler.
-)
-expandedHeadingDefinition = (
-^filler.
+helpText ^ <Fragment> = (
+
+(* todo see Browsing>>ClassPresenter#helpText *)
+	|mapping = Map new.|
+    (*
+    mapping
+    at: #classTestActions put: classActions testActions;  
+    at: #classDeployAction put: classActions deployAction;
+    at: #classEditDeploymentsAction put: classActions editDeploymentsAction;
+    at: #classRunAppAction put: classActions runAppAction;    
+    at: #hopscotchClassActionsMenuButton put: (dropDownMenu: [classActionsMenu]);
+    at: #hopscotchClassReferencesButton put: (itemReferencesButtonWithAction: [browseSelector: subject name]);
+    at: #hopscotchHelpButton put: helpButton;
+    at: #hopscotchRefreshButton put: refreshButton;
+    at: #hopscotchSaveButton put: (saveButtonWithAction: [respondToSave]).
+    *)
+    
+  ^ampleforth: 'A class presenter for Simple IDE Browser. See  Browsing>>ClassPresenter#helpText' mapping: mapping
 )
 ) : (
 )
@@ -297,48 +479,16 @@ public browseIDEClasses = (
               		]
           ]
       )
-private browseClass: klass <Behavior | ClassDeclarationMirror> = (
-	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
-      
+private browseClass: klass <Behavior | ClassDeclarationMirror> = (      
     |
-    classMirror <ClassMirror> = (ClassMirror reflecting: klass).
-    classDeclarationMirror <ClassDeclarationMirror>
-    nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]>
+	classOrClassDeclarationMirror = klass.
+	classUI = self ClassUI forClassDefinedBy: classOrClassDeclarationMirror.
+    classDeclarationMirror = classUI classDeclarationMirror.
+    nestedClassesGroup = classUI nestedClassesGroup.
     |
-    classDeclarationMirror::  classMirror mixin declaration.
     classDeclarationMirror name out. 
-    nestedClassesGroup:: classMirror nestedClasses.
     nestedClassesGroup do: [:nestedClassDeclarationMirror | ('   ', nestedClassDeclarationMirror name) out].
     
-    ^ classDeclarationMirror.
-    )
-private browseClassInWindow: klass <Behavior | ClassDeclarationMirror> = (
-	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
-      
-    |
-    classMirror <ClassMirror> = (ClassMirror reflecting: klass).
-    classDeclarationMirror <ClassDeclarationMirror>
-    nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]>
-    |
-    classDeclarationMirror::  classMirror mixin declaration.
-    classDeclarationMirror name out. 
-    nestedClassesGroup:: classMirror nestedClasses.
-    nestedClassesGroup do: [:nestedClassDeclarationMirror | ('   ', nestedClassDeclarationMirror name) out].
-    
-    ^ classDeclarationMirror.
-    )
-public browseIDEClassesInWindow = (
-      	(* Browse first 5 classes in IDE Root namespace. *)
-          |browsedCount ::=  0.|
-          	ide namespacing Root values do: [ :klass |
-      		    browsedCount < 5 
-                  	ifTrue: [
-      	    			browsedCount: browsedCount + 1.
-              
-          	    		(* core *)
-          				browseClass: klass.
-              		]
-          ]
-      )
+   )
 ) : (
 )

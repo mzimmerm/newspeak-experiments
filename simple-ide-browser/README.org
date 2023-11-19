@@ -22,7 +22,7 @@ Noclass exemplar for method TEST_CONTEXT in class SlotDeclarationMirrorTests Mes
 Noclass exemplar for method yourclass in class ClassMirrorTests MessageNotUnderstood: UndefinedObject evaluate:
 
 
-* 1. Top Workspace Non-UI: Get classes on level 1
+* 1. Top Workspace Non-UI: Browse names of 5 top classes + their nested classes
 
 #+name: workspace-browse-as-text
 #+begin_example
@@ -36,15 +36,18 @@ ideBrowser browseIDEClasses.
 
 #+end_example
 
+
+* 2. Top Workspace UI: Browse one class A1_TestSubject + it's nested classes
+
 #+name: workspace-browse-in-window
 #+begin_example
 |
 ideBrowser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
 classOrClassDeclarationMirror = A1_TestSubjects.
-classUI= ideBrowser ClassUI forClassDefinedBy: classOrClassDeclarationMirror.
+classUI = ideBrowser ClassUI forClassDefinedBy: classOrClassDeclarationMirror.
 |
 
-platform hopscotch core HopscotchWindow openSubject: (classUI ClassSubject onModel: (classUI ClassModel forClassDeclaratioMirror: classUI classDeclarationMirror))
+platform hopscotch core HopscotchWindow openSubject: (classUI ClassSubject onClassModel: (classUI ClassModel forClassDeclarationMirror: classUI classDeclarationMirror))
   
   
      

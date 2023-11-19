@@ -92,5 +92,20 @@ classModel:: (browsing ClassModel
 subject::  (browsing ClassSubject onModel: classModel).
 hopscotch core HopscotchWindow openSubject: subject.
 )
+public browseClass: klass <Behavior | ClassDeclarationMirror> = (
+	(* Need to use ClassMirror to reflect klass to see anything inside, even name. *)
+      
+    |
+    classMirror <ClassMirror> = (ClassMirror reflecting: klass).
+    classDeclarationMirror <ClassDeclarationMirror>
+    nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]>
+    |
+    classDeclarationMirror::  classMirror mixin declaration.
+    classDeclarationMirror name out. 
+    nestedClassesGroup:: classMirror nestedClasses.
+    nestedClassesGroup do: [:nestedClassDeclarationMirror | ('   ', nestedClassDeclarationMirror name) out].
+    
+    ^ classDeclarationMirror.
+    )
 ) : (
 )
