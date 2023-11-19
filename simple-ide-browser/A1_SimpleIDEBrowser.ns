@@ -9,42 +9,51 @@ class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <Hopsco
 	ClassMirror = platform mirrors ClassMirror.
 	Presenter = platform hopscotch Presenter.
     Subject = platform hopscotch Subject.
+    Exception = platform kernel Exception.
     
     (* slots *)
     ide = ide.
-    classUIs <List[ClassBrowser]>
+    classUIs <List[ClassUI]> (* todo : should this be ClassGroup? *)
 	|
   ) (
-public class ClassBrowser forClass: klass <Behavior> = (
+public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|ClassDeclarationMirror> = (
   	|
-    
-    (* Class slot for this browser class and all nested classes. *)
-    private klass <Behavior> = klass.
-    
-    private ui = UI new.
-    
-	(* members used by multiple models in UI and it's nested classes *)
-	private classMirror = (ClassMirror reflecting: klass).
-    private classDeclarationMirror = classMirror mixin declaration.
+    (* Class is also Behavior *)
+    (* public for accesibility to pass to nested ClassModel factory *)
+    public classDeclarationMirror = classOrClassDeclarationMirror isKindOfClass 
+    	ifTrue: [(ClassMirror reflecting: classOrClassDeclarationMirror) mixin declaration]
+        ifFalse: [
+        	classOrClassMirror isKindOfClassDeclarationMirror
+            	ifTrue: [classOrClassDeclarationMirror]
+                ifFalse: [break. Exception signal: 'Perhaps trying to pass aClassMirror? Pass aClassMirror declaration <ClassDeclarationMirror> instead.']
+        ].
+  
+    (* todo Only need Subject. Can get presenter and view from it *)
+    subject = ClassSubject onModel: (ClassModel forClassDeclaratioMirror: classDeclarationMirror).
 
-    private nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]> =  classMirror nestedClasses.
+	(* members used by multiple models in UI and it's nested classes *)
+    (* todo-done private classDeclarationMirror = classMirror mixin declaration. *)
+    
+    (* instanceSide returns MixinMirror, which has API similar to ClassMirror, can get slots, nestedClasses, methods from it. TODO: WHY NOT classSide?? *)
+    private nestedClassesGroup <MirrorGroup[ClassDeclarationMirror]> =  classDeclarationMirror instanceSide nestedClasses.
     private nestedClassDeclarationMirrors ::= nestedClassesGroup do: [:nestedClassDeclarationMirror | nestedClassDeclarationMirror].
 
-    (* indented browsers *)
-	factoryBrowser <FactoryBrowser>
-    (* todo: finish: nestedClassesBrowsers <List[ClassBrowser]> ::= nestedClassDeclarationMirrors collect: [:nestedClassDeclarationMirror | ClassBrowser forClass: nestedClassDeclarationMirror klass]. *)
-    nestedClassGroupBrowser <NestedClassGroupBrowser> 
-    instanceMethodGroupBrowser <MethodGroupBrowser>
-    classMethodGroupBrowser <MethodGroupBrowser>
+    (* indented UIs *)
+	factoryUI <FactoryUI> (* todo : this seems replaced with headingDefinition *)
+    (* todo: finish: nestedClassesUIs <List[ClassUI]> ::= nestedClassDeclarationMirrors collect: [:nestedClassDeclarationMirror | ClassUI forClass: nestedClassDeclarationMirror klass]. *)
+    nestedClassGroupUI <NestedClassGroupUI>
+    instanceMethodGroupUI <MethodGroupUI>
+    classMethodGroupUI <MethodGroupUI>    
 	|
     ) (
-public class UI new = (|
-    (* Only need Subject. Can get presenter and view from it *)
-    subject = ClassSubject onModel: (ClassModel new).
-|) (
-class ClassModel=() (
+public class ClassModel forClassDeclaratioMirror: mirror <ClassDeclarationMirror> = (
+	(* public for use in Workspace *)
+	|
+    private classDeclaratioMirror <ClassDeclaratioMirror> = mirror.
+    |
+) (
 public className = (
-	^ classDeclarationMirror name. 
+	^ classDeclarationMirror name.
 )
 ) : (
 )
@@ -55,9 +64,6 @@ public createPresenter = (
 isKindOfClassSubject = (
 	^ true.
 )
-public isMyKind: s <Subject> ^ <Boolean> = (
-    ^ isKindOfClassSubject.
-)
 public className = (
 	^ classDeclarationMirror name.
 )
@@ -65,9 +71,12 @@ public initiallyExpanded = (
 	(* accessed from Presenter, must be public *)
 	^ false.
 )
+public isMyKind: s <Subject> ^ <Boolean> = (
+    ^ s isKindOfClassSubject.
+)
 ) : (
 )
-class ClassPresenter onSubject: subject <ClassSubject> = Presenter onSubject: subject (
+public class ClassPresenter onSubject: subject <ClassSubject> = Presenter onSubject: subject (
 	(* todo:  *)
 ) (
 nestedClassesPresenters = (
@@ -86,18 +95,23 @@ classPresentation = (
 initiallyExpanded = (
 	^ false.
 )
-public definition ^ <Fragment>  = (
+helpText ^ <Fragment> = (
+
+(* todo see Browsing>>ClassPresenter#helpText *)
+  ^ampleforth: 'A class presenter for Simple IDE Browser. See  Browsing>>ClassPresenter#helpText'
+)
+public definitionORI ^ <Fragment>  = (
 	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
-    
+
 	|classAndNestedClassesPresentation|
     (* Present directory as file, followed by contents in column under the file anme. *)
     classAndNestedClassesPresentation:: List new add: classPresentation; addAll: nestedClassesPresenters.
-    
-    (* If collapsed (default), present a localFileName as a link; 
-        	clicking the link opens this presenter' ~subject fullFilePath~ in a new page 
-            by means of 
+
+    (* If collapsed (default), present a localFileName as a link;
+        	clicking the link opens this presenter' ~subject fullFilePath~ in a new page
+            by means of
             - this FilePresenter calling ~openOnNewPage~, which:
-            - creates a new ~FileSubject onModel: subject FullFilePath~, 
+            - creates a new ~FileSubject onModel: subject FullFilePath~,
               and calls enterSubject on this presenter subject's fullFilePath.
             Such enterSubject: newSubject thisFullFilePath causes the previous HopscotchWindow
             be replaced with the presenter on the new subject.
@@ -110,25 +124,83 @@ public definition ^ <Fragment>  = (
             	link: subject className action: [openOnNewPage].
                 filler.
                 (* todo dropDownMenu: [filePresenterMenu] *)
-                }               
+                }
             ]
     expanded: [
     		column: classAndNestedClassesPresentation
-            ] 
+            ]
     initiallyExpanded: subject initiallyExpanded.
-    
-    
+
+
     (* TODO : from Browsing>>ClassPresenter#definition : add the individual methods helpSection, headingDefinition, lazySlotsPresenter, nestedClassesPresenter, etc
     classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
 	^column: {
         helpSection.
 		headingDefinition.
-		lazySlotsPresenter:: subject lazySlotsSubject presenter.       
-		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassBrowser) ui subject presenter
-		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassBrowser) ui subject presenter
+		lazySlotsPresenter:: subject lazySlotsSubject presenter.
+		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassUI) ui subject presenter
+		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassUI) ui subject presenter
 		classMethodsPresenter:: subject classMethodsSubject presenter.
 	}
     *)
+
+)
+public definition ^ <Fragment>  = (
+	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
+
+	|classAndNestedClassesPresentation|
+    (* Present directory as file, followed by contents in column under the file name. *)
+    (* If collapsed (default), present a localFileName as a link;
+        	clicking the link opens this presenter' ~subject fullFilePath~ in a new page
+            by means of
+            - this FilePresenter calling ~openOnNewPage~, which:
+            - creates a new ~FileSubject onModel: subject FullFilePath~,
+              and calls enterSubject on this presenter subject's fullFilePath.
+            Such enterSubject: newSubject thisFullFilePath causes the previous HopscotchWindow
+            be replaced with the presenter on the new subject.
+    	If expanded, present  ( in the current HopscotchWindow),
+        dirAndContentsPresentation - a localFileName, followed by entries.
+    *)
+
+    (*
+    classAndNestedClassesPresentation:: List new add: classPresentation; addAll: nestedClassesPresenters.
+
+	^ collapsed: [
+    		(* keep: without filePresenterMenu - link: subject localFileName action: [openOnNewPage] *)
+            row: {
+            	link: subject className action: [openOnNewPage].
+                filler.
+                (* todo dropDownMenu: [filePresenterMenu] *)
+                }
+            ]
+    expanded: [
+    		column: classAndNestedClassesPresentation
+            ]
+    initiallyExpanded: subject initiallyExpanded.
+    *)
+
+    (* TODO : from Browsing>>ClassPresenter#definition : add the individual methods helpSection, headingDefinition, lazySlotsPresenter, nestedClassesPresenter, etc *)
+    (*
+    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
+	^column: {
+        helpSection.
+		headingDefinition.
+		lazySlotsPresenter:: subject lazySlotsSubject presenter.
+		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassUI) ui subject presenter
+		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassUI) ui subject presenter
+		classMethodsPresenter:: subject classMethodsSubject presenter.
+	}
+    *)
+
+	^column: {
+        helpSection.
+		headingDefinition.
+                   row: {
+            	link: subject className action: [openOnNewPage].
+                filler.
+                (* todo dropDownMenu: [filePresenterMenu] *)
+                }
+	}
 
 )
 headingDefinition ^ <Fragment> = (
@@ -136,34 +208,32 @@ headingDefinition ^ <Fragment> = (
 	^(column: {
 		expanded: [expandedHeadingDefinition]
 		collapsed: [classNameAndHierarchySummary].
-	}) color: (Color h: 240 s: 0.05 v: 0.9).
+	}) (* color: (Color h: 240 s: 0.05 v: 0.9) *).
 )
-helpText ^ <Fragment> = (
-
-(* todo see Browsing>>ClassPresenter#helpText *)
-  ^ampleforth: 'A class presenter for Simple IDE Browser. See  Browsing>>ClassPresenter#helpText'
+classNameAndHierarchySummary = (
+^filler.
+)
+expandedHeadingDefinition = (
+^filler.
 )
 ) : (
 )
-) : (
-)
-public class MethodGroupBrowser new = (
+public class MethodGroupUI new = (
  |
-private ui = UI new.
-    
+    (* Only need Subject. Can get presenter and view from it *)
+    subject = MethodGroupSubject onModel: (MethodGroupModel new).
+
 (* indented browsers *)
 (* none *)
  |
 ) (
-class UI = (
-) (
 class MethodGroupModel new = (
-	
+
 ) (
 ) : (
 )
 class MethodGroupSubject onModel: m = Subject onModel: m (
-	
+
 ) (
 public isMyKind: s <Subject> ^ <Boolean> = (
 	^ s isKindOfMethodGroupSubject.
@@ -174,7 +244,7 @@ public isKindOfMethodGroupSubject = (
 ) : (
 )
 class MethodGroupPresenter onSubject: s = Presenter onSubject: s (
-	
+
 ) (
 public isMyKind: f <Fragment> ^ <Boolean> = (
 	^ f isKindOfMethodGroupPresenter.
@@ -186,17 +256,14 @@ public isKindOfMethodGroupPresenter = (
 )
 ) : (
 )
-) : (
-)
-public class NestedClassGroupBrowser new = (
+public class NestedClassGroupUI new = (
  |
-private ui = UI new.
+    (* Only need Subject. Can get presenter and view from it *)
+    subject = NestedClassGroupSubject onModel: (NestedClassGroupModel new).
 
 (* indented browsers *)
 (* none *)
  |
-) (
-class UI = (
 ) (
 class NestedClassGroupModel new = (
 
@@ -211,8 +278,6 @@ class NestedClassGroupSubject onModel: m = Subject onModel: m (
 class NestedClassGroupPresenter onSubject: s = Presenter onSubject: s (
 
 ) (
-) : (
-)
 ) : (
 )
 ) : (

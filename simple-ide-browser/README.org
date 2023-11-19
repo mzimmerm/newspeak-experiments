@@ -40,11 +40,14 @@ ideBrowser browseIDEClasses.
 #+begin_example
 |
 ideBrowser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
-klass = A1_TestSubjects.
-classBrowser = ideBrowser ClassBrowser forClass: klass.
+classOrClassDeclarationMirror = A1_TestSubjects.
+classUI= ideBrowser ClassUI forClassDefinedBy: classOrClassDeclarationMirror.
 |
 
-platform hopscotch core HopscotchWindow openSubject: (classBrowser UI new ClassSubject onModel: klass)
+platform hopscotch core HopscotchWindow openSubject: (classUI ClassSubject onModel: (classUI ClassModel forClassDeclaratioMirror: classUI classDeclarationMirror))
+  
+  
+     
 
 #+end_example
 
