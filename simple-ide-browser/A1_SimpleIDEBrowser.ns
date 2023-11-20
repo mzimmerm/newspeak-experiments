@@ -12,6 +12,7 @@ class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <Hopsco
 	Presenter = platform hopscotch Presenter.
     Subject = platform hopscotch Subject.
     
+    (* cheating imports of full classes from ide browsing instead of reimplementing them *)
 	ProgrammingPresenter = ide browsing ProgrammingPresenter.
     ProgrammingSubject =  ide browsing ProgrammingSubject.
 
@@ -59,7 +60,9 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
 	|
     ) (
 public class ClassModel forClassDeclarationMirror: cdm <ClassDeclarationMirror> = (
-	(* public for use in Workspace *)
+	(* UI model for class presentation and editing, model base is ClassDeclaratioMirror.
+        public for use in Workspace. 
+    *)
 	|
     private classDeclarationMirror <ClassDeclaratioMirror> = cdm.
     |
@@ -82,19 +85,22 @@ public name = (
 public classMirror ^ <ClassDeclarationMirror> = (
   ^classDeclarationMirror
 )
+public hash ^ <Integer> = (
+	^ classDeclarationMirror hash (* bitXor: exemplar hash *)
+)
 public isKindOfClassModel ^ <Boolean>  = (
+	(* Support for method ClassModel#=*)
   ^true
 )
 public = other <Object> ^ <Boolean> = (
 	other isKindOfClassModel ifFalse: [^false].
-    ^classDeclarationMirror = other classDeclarationMirror (* and: [exemplar = other exemplar]. *).
+    (* classMirror answers private slot classDeclarationMirror *)
+    ^classMirror = other classMirror (* and: [exemplar = other exemplar]. *).
     )
-public hash ^ <Integer> = (
-	^ classDeclarationMirror hash (* bitXor: exemplar hash *)
-)
 ) : (
 )
 public class ClassSubject onClassModel: model <ClassModel> = ProgrammingSubject onModel: model (
+	
 	(* Browsing>>ClassSubject has this: .
 	public class ClassSubject onClassModel: m <ClassModel> = ProgrammingSubject onModel: m (
 	  | 
@@ -107,12 +113,14 @@ public class ClassSubject onClassModel: model <ClassModel> = ProgrammingSubject 
 	  |
 	)
 	*)
+    
+	(*  ~Document>>Documents#ampletForClass:~ sends 'ClassSubject onClassModel: model <ClassModel>'. 
+       So keep it, and provide the 'standard signature' class method ClassSubject onModel <ClassModel>' 
+    *)
+    
 ) (
 public createPresenter = (
 	^ ClassPresenter onSubject: self.
-)
-isKindOfClassSubject = (
-	^ true.
 )
 public initiallyExpanded = (
 	(* accessed from Presenter, must be public *)
@@ -130,6 +138,9 @@ public title = (
 public classMirror ^ <ClassDeclarationMirror> = (
 	^model classMirror
 )
+public isKindOfClassSubject ^ <Boolean> = (
+  ^true
+)
 public enclosingClassSubjects ^ <List[ClassSubject]> = (
 	(* Browsing>>ClassSubject has:.
 	public enclosingClassSubjects ^ <List[ClassSubject]> = (
@@ -141,18 +152,41 @@ public enclosingClassSubjects ^ <List[ClassSubject]> = (
     *)
 	| them = List new. c |
 	c:: classMirror.
-	(* [c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass]. *)
 	[c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass].
 	^them
+)
+public isTestConfiguration = (
+	(* Send from ClassActionsPresenter *)
+  ^isTopLevel and: [
+	classMirror primaryFactorySelector = #packageTestsUsing: or: [
+		classMirror classSide methods includesMirrorNamed: #packageTestsUsing:
+		]
+	]
+)
+public isTopLevel = (
+	(* Send from ClassActionsPresenter *)
+	^nil = classMirror enclosingClass
+)
+public isApplicationConfiguration ^ <Boolean> = (
+	(* Send from ClassActionsPresenter *)
+  ^isTopLevel and: [
+	classMirror primaryFactorySelector = #packageUsing: or: [
+		classMirror classSide methods includesMirrorNamed: #packageUsing:
+		]
+	]
 )
 ) : (
 public onDeclaration: cd <ClassDeclarationMirror> ^ <Instance> = (
   (* Browsing>>ClassSubject has: ^onClassModel: (ClassModel declaration: cd exemplar: nil) *)
   ^onClassModel: (ClassModel forClassDeclarationMirror: cd (* exemplar: nil *) )
 )
+public onModel: model <ClassModel> = (
+	(* Forwarding this default selector to non-default factory selector. *)
+	^ onClassModel: model
+    )
 )
 public class ClassPresenter onSubject: subject <ClassSubject> = ProgrammingPresenter onSubject: subject (
-	(* Browsing>>ClassPresenter contains: .
+	(* todo Browsing>>ClassPresenter contains: .
     class ClassPresenter onSubject: s = ProgrammingPresenter onSubject: s (
 	  |
 	  public lazySlotsPresenter <LazySlotGroupPresenter>  
@@ -164,7 +198,7 @@ public class ClassPresenter onSubject: subject <ClassSubject> = ProgrammingPrese
 	)
     *)
 	|
-	classActionsPresenter <ClassActionsPresenter> = smallBlank. (* todo *)
+	classActionsPresenter <ClassActionsPresenter> (* Presenter of the [deploy] [configurations] [run] [debug] fragment. *)
     |
 ) (
 nestedClassesPresenters = (
@@ -182,51 +216,6 @@ classPresentation = (
 )
 initiallyExpanded = (
 	^ false.
-)
-public definitionORI ^ <Fragment>  = (
-	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
-
-	|classAndNestedClassesPresentation|
-    (* Present directory as file, followed by contents in column under the file anme. *)
-    classAndNestedClassesPresentation:: List new add: classPresentation; addAll: nestedClassesPresenters.
-
-    (* If collapsed (default), present a localFileName as a link;
-        	clicking the link opens this presenter' ~subject fullFilePath~ in a new page
-            by means of
-            - this FilePresenter calling ~openOnNewPage~, which:
-            - creates a new ~FileSubject onModel: subject FullFilePath~,
-              and calls enterSubject on this presenter subject's fullFilePath.
-            Such enterSubject: newSubject thisFullFilePath causes the previous HopscotchWindow
-            be replaced with the presenter on the new subject.
-    	If expanded, present  ( in the current HopscotchWindow),
-        dirAndContentsPresentation - a localFileName, followed by entries.
-    *)
-	^ collapsed: [
-    		(* keep: without filePresenterMenu - link: subject localFileName action: [openOnNewPage] *)
-            row: {
-            	link: subject className action: [openOnNewPage].
-                filler.
-                (* todo dropDownMenu: [filePresenterMenu] *)
-                }
-            ]
-    expanded: [
-    		column: classAndNestedClassesPresentation
-            ]
-    initiallyExpanded: subject initiallyExpanded.
-
-
-    (* TODO : from Browsing>>ClassPresenter#definition : add the individual methods helpSection, headingDefinition, lazySlotsPresenter, nestedClassesPresenter, etc
-    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
-	^column: {
-        helpSection.
-		headingDefinition.
-		lazySlotsPresenter:: subject lazySlotsSubject presenter.
-		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassUI) ui subject presenter
-		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassUI) ui subject presenter
-		classMethodsPresenter:: subject classMethodsSubject presenter.
-	}
-    *)
-
 )
 expandedHeadingDefinition = (
 ^filler.
@@ -246,34 +235,6 @@ classNameAndContainmentDefinition ^ <Fragment> = (
 		label: subject classCommentSummary.
 	}
 )
-classNameAndHierarchySummary = (
-	| parts <List[Fragment]> |
-	parts:: List new.
-	subject enclosingClassSubjects
-		do: [:ecs | parts add: (link: ecs name action: [enterSubject:: ecs])]
-		separatedBy: [parts add: ( label: ' in ')].
-	^column: {
-		row: {
-			smallBlank.
-			(image: ide images classIcon)
-                 height: styleButtonSize.
-			smallBlank.
-			row: parts.
-			filler.
-            classActionsPresenter.
-			smallBlank.
-			itemReferencesButtonWithAction: [browseSelector: subject name].
-			smallBlank.
-			saveButtonWithAction: [respondToSave].
-			smallBlank.
-			refreshButton.			
-			smallBlank.
-            helpButton.
-			smallBlank.
-			dropDownMenu: [classActionsMenu].
-		}
-	}
-)
 classActionsMenu = (
 	^menuWithLabelsAndActions: {
 	 	{'Save to File'. [respondToSave]}.
@@ -284,104 +245,9 @@ classActionsMenu = (
 		{'Delete'. [respondToDelete]}.
 	}
 )
-headingDefinition ^ <Fragment> = (
-	(* todo finish *)
-	^(column: {
-		expanded: [expandedHeadingDefinition]
-		collapsed: [classNameAndHierarchySummary].
-	}) color: (Color h: 240 s: 0.05 v: 0.9).
-)
-public definition ^ <Fragment>  = (
-	(* todo return collapsed with class label, expanded with row of nested classes definitions. *)
-
-	|classAndNestedClassesPresentation|
-    (* Present directory as file, followed by contents in column under the file name. *)
-    (* If collapsed (default), present a localFileName as a link;
-        	clicking the link opens this presenter' ~subject fullFilePath~ in a new page
-            by means of
-            - this FilePresenter calling ~openOnNewPage~, which:
-            - creates a new ~FileSubject onModel: subject FullFilePath~,
-              and calls enterSubject on this presenter subject's fullFilePath.
-            Such enterSubject: newSubject thisFullFilePath causes the previous HopscotchWindow
-            be replaced with the presenter on the new subject.
-    	If expanded, present  ( in the current HopscotchWindow),
-        dirAndContentsPresentation - a localFileName, followed by entries.
-    *)
-
-    (*
-    classAndNestedClassesPresentation:: List new add: classPresentation; addAll: nestedClassesPresenters.
-
-	^ collapsed: [
-    		(* keep: without filePresenterMenu - link: subject localFileName action: [openOnNewPage] *)
-            row: {
-            	link: subject className action: [openOnNewPage].
-                filler.
-                (* todo dropDownMenu: [filePresenterMenu] *)
-                }
-            ]
-    expanded: [
-    		column: classAndNestedClassesPresentation
-            ]
-    initiallyExpanded: subject initiallyExpanded.
-    *)
-
-    (* Browsing>>ClassPresenter#definition : add the individual methods helpSection, headingDefinition, lazySlotsPresenter, nestedClassesPresenter, etc *)
-    (*
-    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
-	^column: {
-        helpSection.
-		headingDefinition.
-		lazySlotsPresenter:: subject lazySlotsSubject presenter.
-		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassUI) ui subject presenter
-		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassUI) ui subject presenter
-		classMethodsPresenter:: subject classMethodsSubject presenter.
-	}
-    *)
-
-	^column: {
-        helpSection.
-		headingDefinition.
-        (*
-        row: {
-            	link: subject className action: [openOnNewPage].
-                filler.
-                dropDownMenu: [filePresenterMenu]
-                }
-        *)        
-	}
-
-)
-classNameAndHierarchySummaryORI  = (
-	| parts <List[Fragment]> |
-	parts:: List new.
-	subject enclosingClassSubjects
-		do: [:ecs | parts add: (link: ecs name action: [enterSubject:: ecs])]
-		separatedBy: [parts add: ( label: ' in ')].
-	^column: {
-		row: {
-			smallBlank.
-			(image: ide images classIcon)
-                 height: styleButtonSize.
-			smallBlank.
-			row: parts.
-			filler.
-            classActionsPresenter.
-			smallBlank.
-			itemReferencesButtonWithAction: [browseSelector: subject name].
-			smallBlank.
-			saveButtonWithAction: [respondToSave].
-			smallBlank.
-			refreshButton.			
-			smallBlank.
-            helpButton.
-			smallBlank.
-			dropDownMenu: [classActionsMenu].
-		}
-	}
-)
 helpText ^ <Fragment> = (
 
-(* todo see Browsing>>ClassPresenter#helpText *)
+(* Help text shown in the ~helpSection~ div above the Class line. *)
 	|mapping = Map new.|
     (*
     mapping
@@ -397,6 +263,211 @@ helpText ^ <Fragment> = (
     *)
     
   ^ampleforth: 'A class presenter for Simple IDE Browser. See  Browsing>>ClassPresenter#helpText' mapping: mapping
+)
+public definition ^ <Fragment>  = (
+	(* Fragment of ClassPresenter. *)
+
+    (* Browsing>>ClassPresenter#definition. :     
+    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
+	^column: {
+        helpSection.
+		headingDefinition.
+		lazySlotsPresenter:: subject lazySlotsSubject presenter.
+		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassUI) ui subject presenter
+		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassUI) ui subject presenter
+		classMethodsPresenter:: subject classMethodsSubject presenter.
+	}
+    *)
+
+	(* Prepare the presenter of the [deploy] [configurations] [run] [debug] fragment. Inserted into headingDefinition. *)
+    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
+    (* Column with help, heading (expanded or collapsed), then setting and inserting lazy slots, nested classes, etc. *)
+	^column: {
+        helpSection. (* The initially empty section above headingDefinition. It is filled after click on the "?" in headingDefinition *)
+		headingDefinition.
+        (*
+        row: {
+            	link: subject className action: [openOnNewPage].
+                filler.
+                dropDownMenu: [filePresenterMenu]
+                }
+        *)        
+	}
+
+)
+headingDefinition ^ <Fragment> = (
+	(* Fragment for collapsed and expanded Class section.
+    	- Collapsed shows ~classNameAndHierarchySummary~, a row with: 
+          - className with link to enterSubject and bread crumbs parts
+          - classActionsPresenter
+		  - itemReferencesButtonWithAction: [browseSelector: subject name]. 
+		  -	saveButtonWithAction: [respondToSave].
+		  -	refreshButton.
+          - helpButton.
+		  - dropDownMenu: [classActionsMenu].
+       - Expanded shows ~expandedHeadingDefinition~  
+         - todo
+    *)
+	^(column: {
+		collapsed: [classNameAndHierarchySummary]
+		expanded: [expandedHeadingDefinition]
+        initiallyExpanded: initiallyExpanded. (* note: differs from Browsing>>ClassPresenter *)
+	}) color: (Color h: 240 s: 0.05 v: 0.9).
+)
+classNameAndHierarchySummary = (
+	| parts <List[Fragment]> |
+	parts:: List new.
+	subject enclosingClassSubjects
+		do: [:ecs | parts add: (link: ecs name action: [enterSubject:: ecs])]
+		separatedBy: [parts add: ( label: ' in ')].
+	^column: {
+		row: {
+			smallBlank.
+			(image: ide images classIcon)
+                 height: styleButtonSize.
+			smallBlank.
+			row: parts.
+			filler.
+            classActionsPresenter. (* Presenter of the [deploy] [configurations] [run] [debug] fragment. *)
+			smallBlank.
+			itemReferencesButtonWithAction: [browseSelector: subject name]. (* todo *)
+			smallBlank.
+			saveButtonWithAction: [respondToSave]. (* todo *)
+			smallBlank.
+			refreshButton.			 (* todo check *)
+			smallBlank.
+            helpButton.               (* todo check *)
+			smallBlank.
+			dropDownMenu: [classActionsMenu].  (* todo *)
+		}
+	}
+)
+) : (
+)
+public class ClassActionsPresenter onSubject: s = ProgrammingPresenter onSubject: s (
+	(* Presenter of the [deploy] [configurations] [run] [debug] fragment.
+	   Completely ripped off of Browsing where it is protected, so could not import.
+	*)
+) (
+public isKindOfClassActionsPresenter ^ <Boolean> = (
+  ^true
+)
+isMyKind: f <Fragment> ^ <Boolean> = (
+  ^f isKindOfClassActionsPresenter
+)
+deployAsWebPageWithMirrorBuilders = (
+#BOGUS yourself.
+ (ide deployment jsPackagerForPlatform: cachedPlatform)
+		packageApplicationConfiguration: (ide namespacing Root at: subject name)
+		withRuntimeConfiguration: ide deployment RuntimeWithMirrorBuilders
+		usingNamespace: ide namespacing Root.
+)
+deployAsWebPage = (
+#BOGUS yourself.
+ (ide deployment jsPackagerForPlatform: cachedPlatform)
+		packageApplicationConfiguration: (ide namespacing Root at: subject name)
+		withRuntimeConfiguration: ide deployment Runtime
+		usingNamespace: ide namespacing Root.
+)
+definition = (
+	^(row: {
+        testActions.
+        mediumBlank.
+        deployAction.
+        mediumBlank.
+        editDeploymentsAction.
+        mediumBlank.
+        runAppAction.
+        })
+		mainAxisAlignToEnd.
+)
+deployAsVictoryFuel = (
+	| bytes = subject bytesForVictoryFuel. |
+  	ide webFiles downloadFileName: subject name, '.vfuel' fromBytes: bytes.
+)
+deployAsVictoryFuelWithMirrors = (
+      | bytes = subject bytesForVictoryFuelWithMirrors. |
+  	ide webFiles downloadFileName: subject name, '.vfuel' fromBytes: bytes.
+)
+future_deployAction = (
+(* Eventually, we'll use the deployment manager for deployment.
+    At that point, this method will replace the current #deployAction
+    implementation. Alas, this will take a while, as we need to implement
+    a general strategy for reconstituting serialized aliens for this to work.
+*)
+	subject isApplicationConfiguration ifFalse: [^nothing].
+	^link: '[deploy]' action: [
+			openMenu:: menuWithLabelsAndActions: (
+               ide deployment configurations collect: [:dc <DeploymentConfiguration> |
+                   {'to ', dc name.
+                   [ide deployment deploy: (ide namespacing Root at: subject name) on: dc]}]
+			)
+		]
+)
+respondToRunApp: paused = (
+	(* bogus: The subject might not be in the root namespace. *)
+	| appConfig manifest platform args thread |
+	appConfig:: ide namespacing Root at: subject name.
+	manifest:: ide namespacing manifest.
+	platform:: cachedPlatform.
+	args:: {}.
+	thread:: platform mirrors ActivationMirror invokeSuspended:
+		[(appConfig packageUsing: manifest) main: AppPlatform new args: args].
+	paused ifFalse: [thread resume].
+	thread isFulfilled ifFalse:
+		[enterSubject:: ide debugging ThreadSubject onModel: thread].
+)
+respondToRunTests = (
+	| thread |
+	thread:: cachedPlatform mirrors ActivationMirror invokeSuspended:
+		[enterSubject:: subject testingSubject].
+    thread resume.
+	thread isFulfilled
+       ifFalse:
+		[enterSubject:: ide debugging ThreadSubject onModel: thread].
+)
+respondToShowTests = (
+	| thread |
+	thread:: cachedPlatform mirrors ActivationMirror invokeSuspended:
+		[enterSubject:: subject inactiveTestingSubject].
+    thread resume.
+	thread isFulfilled
+       ifFalse:
+		[enterSubject:: ide debugging ThreadSubject onModel: thread].
+)
+public testActions = (
+	subject isTestConfiguration ifFalse: [^nothing].
+	^row: {
+		link: '[run tests]' action: [respondToRunTests].
+		link: '[show tests]' action: [respondToShowTests]}.
+)
+public runAppAction = (
+	subject isApplicationConfiguration ifFalse: [^nothing].
+    ^row: {
+			link: '[run]' action: [respondToRunApp: false].
+			link: '[debug]' action: [respondToRunApp: true].
+		}
+)
+public editDeploymentsAction = (
+| DeploymentConfigurationSubject = ide deployment DeploymentConfigurationSubject. |
+	subject isApplicationConfiguration ifFalse: [^nothing].
+	^link: '[configurations]' action: [
+			openMenu:: menuWithLabelsAndActions:
+               ((ide deployment configurations) collect: [:dc <DeploymentConfiguration> |
+                   {dc name. [enterSubject:: DeploymentConfigurationSubject onModel: dc]}]),
+                {{'Create New Deployment'. [enterSubject:: DeploymentConfigurationSubject onModel: ide deployment defaultConfiguration]}}
+		]
+)
+public deployAction = (
+	subject isApplicationConfiguration ifFalse: [^nothing].
+	^(link: '[deploy]' action: [
+			openMenu:: menuWithLabelsAndActions: {
+				{'as VictoryFuel'. [deployAsVictoryFuel]}.
+				{'as VictoryFuel with Mirrors'. [deployAsVictoryFuelWithMirrors]}.
+				{'as Web Page'. [deployAsWebPage]}.
+				{'as Web Page with Mirror Builders'. [deployAsWebPageWithMirrorBuilders]}.
+			}
+		]).
 )
 ) : (
 )
