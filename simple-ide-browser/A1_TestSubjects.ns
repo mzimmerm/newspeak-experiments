@@ -1,6 +1,7 @@
 Newspeak3
 'Root'
 class A1_TestSubjects = (
+(* Testing class for the benefit of A1_SimpleIDEBrowser *)
 ) (
 class Nested1 = (
 	|
