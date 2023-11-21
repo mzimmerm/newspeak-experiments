@@ -372,7 +372,7 @@ classNameAndHierarchySummary = (
 			smallBlank.
             helpButton.               (* image and action for 'help': action value calls: ~helpHolder content: helpContents]) height: styleButtonSize~ which uses self helpText *)
 			smallBlank.
-			dropDownMenu: [classActionsMenu].  (* todo *)
+			dropDownMenu: [classActionsMenu].  (* dropDownMenu with name->action map for 'save to file', 'inspect presenter', 'inspect mirror' and 'delete' of class: menu action value for 'inspect presenter' calls: ~ProgrammingPresente#respondToInspectPresenter~ ->  ~ProgrammingPresente#inspectObject: self=aClassPresenter~ -> ~enterSubject:: ObjectSubject onModel: (ObjectMirror reflecting: object)~ - Basically current presenter is replaced with ObjectPresentor on aClassPresenter=self=object on which the dropDownMenu is called!!! *)
 		}
 	}
 )
