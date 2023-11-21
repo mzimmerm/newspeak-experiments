@@ -167,6 +167,27 @@ public isApplicationConfiguration ^ <Boolean> = (
 		]
 	]
 )
+public compilationUnitSource ^ <String> = (
+	(* from Browsing>>ClassSubject. Calculates source code from classMirror <ClassDeclarationMirror> *)
+  isTopLevel ifTrue: [
+	^compilationUnitFromSource: classMirror source
+	].
+  ^classMirror source
+)
+public classCommentSummary ^ <String> = (
+	|
+	fullComment <String> = subject classCommentText.
+	endOfFirstSentence <Integer> = fullComment indexOf: '.'.
+	firstSentence <String> = fullComment copyFrom: 1 to: endOfFirstSentence.
+	|
+	^firstSentence
+)
+public classCommentText ^<String> = (
+	(* First sentence of class comment *)
+	| comment = classMirror header classComment. |
+	nil = comment ifTrue: [^''].
+	^comment
+)
 public enclosingClassSubjects ^ <List[ClassSubject]> = (
 	(* Browsing>>ClassSubject has:.
 	public enclosingClassSubjects ^ <List[ClassSubject]> = (
@@ -179,15 +200,8 @@ public enclosingClassSubjects ^ <List[ClassSubject]> = (
 	| them = List new. c |
 	c:: classMirror.
 	[c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass].
-    'start of enclosingClassSubjects them:' out. them do: [:classSubject | classSubject classMirror printString out]. 'end' out.
+    (* mz log todo-remove 'start of enclosingClassSubjects them:' out. them do: [:classSubject | classSubject classMirror printString out]. 'end' out. *)
 	^them
-)
-public compilationUnitSource ^ <String> = (
-	(* from Browsing>>ClassSubject. Calculates source code from classMirror <ClassDeclarationMirror> *)
-  isTopLevel ifTrue: [
-	^compilationUnitFromSource: classMirror source
-	].
-  ^classMirror source
 )
 ) : (
 public onDeclaration: cd <ClassDeclarationMirror> ^ <Instance> = (
@@ -225,22 +239,11 @@ public isMyKind: f <Fragment> ^ <Boolean> = (
 public isKindOfClassPresenter = (
 	^ true.
 )
-classPresentation = (
-	^ label: subject className.
-)
 initiallyExpanded = (
 	^ false.
 )
 expandedHeadingDefinition = (
 ^filler.
-)
-classCommentSummary ^ <String> = (
-	|
-	fullComment <String> = subject classCommentText.
-	endOfFirstSentence <Integer> = fullComment indexOf: '.'.
-	firstSentence <String> = fullComment copyFrom: 1 to: endOfFirstSentence.
-	|
-	^firstSentence
 )
 classNameAndContainmentDefinition ^ <Fragment> = (
 	^column: {
@@ -362,6 +365,7 @@ classNameAndHierarchySummary = (
 			smallBlank.
 			row: parts.
 			filler.
+            label: subject classCommentSummary. (* NOT in Browsing>>ClassPresenter. It is in Namespacing>>ClassEntryPresenter *)
             classActionsPresenter. (* Presenter of the [deploy] [configurations] [run] [debug] fragment. *)
 			smallBlank.
 			itemReferencesButtonWithAction: [browseSelector: subject name]. (* image and action for 'find class references/usages': action value calls: ~enterSubject: Browsing>>SelectorSubject onModel: class name~  which shows Browsing>>SelectorPresenter *)
@@ -573,19 +577,6 @@ class NestedClassGroupPresenter onSubject: s = Presenter onSubject: s (
 )
 ) : (
 )
-public browseIDEClasses = (
-      	(* Browse first 5 classes in IDE Root namespace. *)
-          |browsedCount ::=  0.|
-          	ide namespacing Root values do: [ :klass |
-      		    browsedCount < 5 
-                  	ifTrue: [
-      	    			browsedCount: browsedCount + 1.
-              
-          	    		(* core *)
-          				browseClass: klass.
-              		]
-          ]
-      )
 private browseClass: klass <Behavior | ClassDeclarationMirror> = (      
     |
 	classOrClassDeclarationMirror = klass.
@@ -603,5 +594,30 @@ public compilationUnitFromSource: src <String> ^ <String>
 = (
 	^'Newspeak3', String newline,  'Root' printString, String newline, src
 )
+public browseIDEClasses = (
+      	(* Browse first 5 classes in IDE Root namespace. *)
+          |browsedCount ::=  0.|
+          	ide namespacing Root values do: [ :klass |
+      		    browsedCount < 5 
+                  	ifTrue: [
+      	    			browsedCount: browsedCount + 1.
+              
+          	    		(* core *)
+          				browseClassToOut: klass.
+              		]
+          ]
+      )
+private browseClassToOut: klass <Behavior | ClassDeclarationMirror> = (
+	(* Browses the passed klass name and nested classes names, outputted to out. *)
+    |
+	classOrClassDeclarationMirror = klass.
+	classUI = self ClassUI forClassDefinedBy: classOrClassDeclarationMirror.
+    classDeclarationMirror = classUI classDeclarationMirror.
+    nestedClassesGroup = classUI nestedClassesGroup.
+    |
+    classDeclarationMirror name out. 
+    nestedClassesGroup do: [:nestedClassDeclarationMirror | ('   ', nestedClassDeclarationMirror name) out].
+    
+   )
 ) : (
 )

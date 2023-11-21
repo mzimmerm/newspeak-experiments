@@ -32,7 +32,7 @@ ideBrowser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
 
 ideBrowser browseIDEClasses.
 
-(* browser browseClass: A1_TestSubjects. *)
+(* browser browseClassToOut: A1_TestSubjects. *)
 
 #+end_example
 
