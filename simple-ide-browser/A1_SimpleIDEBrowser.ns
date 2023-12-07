@@ -8,6 +8,10 @@ class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <Hopsco
     List = platform collections List.    
     Map = platform collections Map.    
 	ClassMirror = platform mirrors ClassMirror.
+    ObjectMirror = platform mirrors ObjectMirror.
+	Exception = platform kernel Exception.
+    Color = platform graphics Color.
+    
 
 	Presenter = platform hopscotch Presenter.
     Subject = platform hopscotch Subject.
@@ -17,9 +21,7 @@ class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <Hopsco
     ProgrammingSubject =  ide browsing ProgrammingSubject.
     DefinitionListPresenter = ide browsing DefinitionListPresenter.
 
-	Exception = platform kernel Exception.
-    Color = platform graphics Color.
-    
+
     (* slots *)
     ide = ide.
     classUIs <List[ClassUI]> (* todo : should this be ClassGroup? *)
@@ -68,6 +70,78 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
 
 	|
     ) (
+public class EntryPresenter onSubject: s = ProgrammingPresenter onSubject: s () (
+public collapse = (
+	substance collapse
+)
+definition = (
+	^collapsed: [collapsedDefinition] expanded: [expandedDefinition]
+)
+public expand = (
+	substance expand
+)
+public isKindOfEntryPresenter ^ <Boolean> = (
+  ^true
+)
+isMyKind: f <Fragment> ^ <Boolean> = (
+  ^f isKindOfEntryPresenter
+)
+row1: row1 row2: row2 = (
+	^row: {
+		(row: row1) width: 0 elasticity: 1.
+		(row: {mediumBlank}, row2) width: 0 elasticity: 2.
+	}
+)
+) : (
+)
+class ClassEntryPresenter onSubject: s <ClassSubject> = EntryPresenter onSubject: s () (
+classCommentSummary ^ <String> = (
+	|
+	fullComment <String> = subject classCommentText.
+	endOfFirstSentence <Integer> = fullComment indexOf: '.'.
+	firstSentence <String> = fullComment copyFrom: 1 to: endOfFirstSentence.
+	|
+	^firstSentence
+)
+entryActionsMenu = (
+	^nothing
+)
+expandedDefinition = (
+	^subject presenter
+)
+public tag ^ <String> = (
+  ^subject name
+)
+public isKindOfClassEntryPresenter ^ <Boolean> = (
+  ^true
+)
+isMyKind: f <Fragment> ^ <Boolean> = (
+  ^f isKindOfClassEntryPresenter
+)
+collapsedDefinition = (
+	^row1: {
+        defaultBlank.
+		(image: ide images classIcon)
+            height: styleButtonSize.
+        defaultBlank.
+		accessIndicator.
+        defaultBlank.
+		link: subject name action: [enterSubject:: ClassSubject onDeclaration: subject classMirror].
+	} row2: {
+		(row: {deferred: [(label: subject classCommentSummary)
+			smallFont;
+			color: secondaryTextColor]})
+				compressibility: 1.
+		filler
+			compressibility: 0.
+
+		(ClassActionsPresenter onSubject: subject) elasticity: 1.
+		mediumBlank.
+		entryActionsMenu.
+	}
+)
+) : (
+)
 public class ClassModel forClassDeclarationMirror: cdm <ClassDeclarationMirror> = (
 	(* UI model for single class IDE; class defined by ClassDeclarationMirror.
         public for use in Workspace. 
@@ -129,7 +203,10 @@ public class ClassSubject onClassModel: model <ClassModel> = ProgrammingSubject 
     *)
     |
     nestedClassesSubject_slot  <NestedClassGroupSubject>
+    modelObjectClassname = (ObjectMirror reflecting: model) getClass mixin name.
     |
+    
+    (modelObjectClassname = 'ClassModel') ifFalse: [break.].
 ) (
 public createPresenter = (
 	^ ClassPresenter onSubject: self.
@@ -146,9 +223,6 @@ public name = (
 )
 public title = (
 	^name
-)
-public classMirror ^ <ClassDeclarationMirror> = (
-	^model classMirror
 )
 public isKindOfClassSubject ^ <Boolean> = (
   ^true
@@ -209,10 +283,6 @@ public isTestConfiguration = (
 		]
 	]
 )
-public elements = (
-(* todo-00-last-last *)
-    ^ {}.
-)
 public nestedClassesSubject ^ <NestedClassGroupSubject> 
 (* Subject for group of nested classes. *)
 (* From Browsing>>ClassSubject#nestedClassesSubject. Removed exemplar: *)
@@ -228,6 +298,13 @@ public nestedClassesSubject ^ <NestedClassGroupSubject>
 	 nestedClassesSubject_slot:: nestedClassesSubject_tmp.
     ].
    ^nestedClassesSubject_slot
+)
+public accessModifier = (
+	^classMirror accessModifier
+)
+public classMirror ^ <ClassDeclarationMirror> = (
+	( 'model=', model printString ) out.
+	^model classMirror
 )
 ) : (
 public onDeclaration: cd <ClassDeclarationMirror> ^ <Instance> = (
@@ -617,12 +694,12 @@ elementSubjectClass ^ <ClassSubject class> = (
 	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
 	^ClassSubject
 )
-public elementFor: m <Mirror> = (
+elementFor: m <Mirror> = (
 	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
 	(* ^ClassModel declaration: m exemplar: nil enclosing: exemplar *)
-    ClassModel forClassDeclarationMirror: m.
+   ^ClassModel forClassDeclarationMirror: m.
 )
-public elementModelClass ^ <ClassModel class> = (
+elementModelClass ^ <ClassModel class> = (
 	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
     ^ ClassModel
 )
@@ -630,7 +707,6 @@ public elementModelClass ^ <ClassModel class> = (
 )
 public class NestedClassGroupPresenter onSubject: s = MirrorGroupPresenter onSubject: s (
 (* Presents the subject, a NestedClassGroupSubject, as a column of presenters for the nested classes in the group. Automatically gets updated after the subject mirror group. Anything that has to do with adding, editing or deleting NS nested classes goes here. *)
-break.
 ) (
 listDescription ^ <String> = (
 	(* Needed only for help. *)
@@ -644,16 +720,10 @@ elementDescription ^ <String> = (
 	(* Used in Help only *)
   ^'nested classes of the surrounding class'
 )
-public isKindOfNestedClassGroupPresenter ^ <Boolean> = (
-  ^true
-)
-isMyKind: other = (
-^ other isKindOfNestedClassGroupPresenter
-)
 elementPresenterClass ^ <ProgrammingPresenter class> = (
 	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
 	(* todo-00-last-last : original : ^ClassEntryPresenter *)
-    ^ ClassPresenter.
+    ^ ClassEntryPresenter.
 )
 ) : (
 )
@@ -708,17 +778,7 @@ public mirrorGroup ^ <MirrorGroup> = (
     break.
 	^model mirrorGroup
 )
-public isKindOfMirrorGroupSubject ^ <Boolean> = (
-  ^true
-)
 public definingMixin ^ <MixinMirror> = (^ model definingMixin)
-public elementFor: m <Mirror> = (
-	^subclassResponsibility
-)
-public elementSubjectClass = (
-	(* Answer the class of the subjects we create on individual elements of our subject group. *)
-	subclassResponsibility
-)
 public elements ^<Collection[Subject]> = (
 	(* Answer a collection of subjects on individual elements of the group which is our subject. *)
     elements_slot isNil ifTrue: [
@@ -748,6 +808,24 @@ public updateElements = (
   ].
   *)
 )
+elementModelClass = (
+	(* Answer the class of the models we create for individual elements of our subject group. *)
+	subclassResponsibility
+)
+modelMirrorCollection ^<Collection[Mirror]> = (
+	^subclassResponsibility
+)
+elementFor: m <Mirror> = (
+	^subclassResponsibility
+)
+elementSubjectClass = (
+	(* Answer the class of the subjects we create on individual elements of our subject group. *)
+	subclassResponsibility
+)
+public isKindOfMirrorGroupSubject ^ <Boolean> = (
+	break.
+  ^true
+)
 ) : (
 )
 public class MirrorGroupPresenter onSubject: s <Subject> = DefinitionListPresenter onSubject: s (
@@ -756,11 +834,6 @@ public class MirrorGroupPresenter onSubject: s <Subject> = DefinitionListPresent
 elementPresenterClass ^ <ProgrammingPresenter class> = (
 	(* A subclass must redefine this to define the class of presenter it will be using. *)
 	subclassResponsibility
-)
-createPresenterForSubject: aSubject <Subject> ^ <ProgrammingPresenter> = (
-	(* Let the subject create its default unless elementPresenterClass is set to specify our preference. *)
-	nil = elementPresenterClass ifTrue: [break. ^aSubject presenter].
-	^elementPresenterClass onSubject: aSubject
 )
 contentPresenters ^ <Collection[ProgrammingPresenter]> = (
     (* alert: 'In MirrorGroupPresenter#contentPresenters subject=', subject printString, ' self=', self printString, ' self subject=', self subject printString. *)
@@ -772,6 +845,11 @@ contentPresenters ^ <Collection[ProgrammingPresenter]> = (
             lexicallyLessOrEqual: p1 subject name than: p2 subject name
           ]
           *)
+)
+createPresenterForSubject: aSubject <Subject> ^ <ProgrammingPresenter> = (
+	(* Let the subject create its default unless elementPresenterClass is set to specify our preference. *)
+	nil = elementPresenterClass ifTrue: [^aSubject presenter].
+	^elementPresenterClass onSubject: aSubject
 )
 ) : (
 )
