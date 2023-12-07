@@ -57,9 +57,6 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
                 ifFalse: [break. Exception signal: 'Perhaps trying to pass aClassMirror? Pass aClassMirror declaration <ClassDeclarationMirror> instead.']
         ].
   
-    (* todo Only need Subject. Can get presenter and view from it *)
-    (* todo-00-last-last-removed : subject = ClassSubject onClassModel: (ClassModel forClassDeclarationMirror: classDeclarationMirror). *)
-
 	(* members used by multiple models in UI and it's nested classes *)
     
     (* instanceSide returns MixinMirror, which has API similar to ClassMirror, can get slots, nestedClasses, methods from it. *)
@@ -478,10 +475,7 @@ public definition ^ <Fragment>  = (
 		headingDefinition. (* Fragment for collapsed or expanded Class Factory method with slots. Collapsed shows ~classNameAndHierarchySummary~ Expanded shows ~expandedHeadingDefinition~ *)
         
         (* Note that the ~headingDefinition~ above shows different fragments for collapsed/expanded, but fragments for everything below are the same both in expanded/collapsed! *)
-        
-        (* todo-00-last-last : This is where the problem is *)
         nestedClassesPresenter:: subject nestedClassesSubject presenter. (* prepare: nestedClassesGroupBrowser (slot on ClassUI) ui subject presenter *)
-       
 	}
 
 )
@@ -617,14 +611,10 @@ public deployAction = (
 ) : (
 )
 public class MethodGroupUI new = (
- |
-    (* todo-00-last-last : removed : Only need Subject. Can get presenter and view from it 
-    subject = MethodGroupSubject onModel: (MethodGroupModel new).
-    *)
-
-(* indented browsers *)
-(* none *)
- |
+  |
+  (* indented browsers *)
+  (* none *)
+  |
 ) (
 class MethodGroupModel new = (
 
@@ -721,8 +711,7 @@ elementDescription ^ <String> = (
   ^'nested classes of the surrounding class'
 )
 elementPresenterClass ^ <ProgrammingPresenter class> = (
-	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
-	(* todo-00-last-last : original : ^ClassEntryPresenter *)
+	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - ClassPresenter SHOULD be returned here. BUT WE RETURN ClassEntryPresenter, WHICH WILL USE ClassSubject, SAME SUBJECT AS ClassPresenter WOULD. *)
     ^ ClassEntryPresenter.
 )
 ) : (
@@ -790,7 +779,7 @@ public elements ^<Collection[Subject]> = (
    ^elements_slot
 )
 public updateElements = (
-(* todo-00-last-last removed for now
+(* todo-00 removed for now
   |
   subjectMirrors <List[Mirror]> = elements_slot collect: [:e <Subject> |
     e model mirror
@@ -829,7 +818,6 @@ public isKindOfMirrorGroupSubject ^ <Boolean> = (
 ) : (
 )
 public class MirrorGroupPresenter onSubject: s <Subject> = DefinitionListPresenter onSubject: s (
-(* todo-00-last-last break. *)
 ) (
 elementPresenterClass ^ <ProgrammingPresenter class> = (
 	(* A subclass must redefine this to define the class of presenter it will be using. *)
@@ -842,10 +830,10 @@ createPresenterForSubject: aSubject <Subject> ^ <ProgrammingPresenter> = (
 )
 contentPresenters ^ <Collection[ProgrammingPresenter]> = (
     (* alert: 'In MirrorGroupPresenter#contentPresenters subject=', subject printString, ' self=', self printString, ' self subject=', self subject printString. *)
-    (* todo-00-last-last subject here is ClassSubject, incorrect, WHY????????????????????? self subject is MirrorGroupSubject, correct, so use that. *)
+    (* note-00 subject was resolved to ClassSubject when we kept subject slot on outer ClassUI. THIS WAS THE RESULT OF VIRTUAL LOOKUP LOOKING FOR 'subject' AT LEXICAL SCOPE BEFORE SUPERCLASS . *)
 	^(subject elements collect:
 		[:each <Subject> | createPresenterForSubject: each]) 
-        (* todo-00-last-last do NOT sort for now, as name in  p1 subject name not understood 
+        (* todo-00 do NOT sort for now, as name in  p1 subject name not understood
         sort: [:p1 <ProgrammingPresenter> :p2 <ProgrammingPresenter> | 
             lexicallyLessOrEqual: p1 subject name than: p2 subject name
           ]
