@@ -3,14 +3,14 @@ Newspeak3
 class A1_TestSubjects = (
 (* Testing class for the benefit of A1_SimpleIDEBrowser. *)
 ) (
-class Nested1 = (
+public class Nested1 = (
 	|
 	nested1Slot1
 	|
 ) (
 ) : (
 )
-class Nested2 = (
+public class Nested2 = (
 	|
 	nested2Slot1
 	|

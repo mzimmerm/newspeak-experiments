@@ -40,14 +40,19 @@ ideBrowser browseIDEClasses.
 * 2. Top Workspace UI: Browse one class A1_TestSubject + it's nested classes
 
 #+name: workspace-browse-in-window
-#+begin_example
+#+begin_example smalltalk
 |
-ideBrowser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
+simpleIDEBrowser = A1_SimpleIDEBrowser usingPlatform: platform webIDE: ide.
 classOrClassDeclarationMirror = A1_TestSubjects.
-classUI = ideBrowser ClassUI forClassDefinedBy: classOrClassDeclarationMirror.
+classUI = simpleIDEBrowser ClassUI forClassDefinedBy: classOrClassDeclarationMirror.
+ClassSubject = classUI ClassSubject.
+ClassModel = classUI ClassModel.
+
+classModelForBrowsedClass = ClassModel forClassDeclarationMirror: (classUI classDeclarationMirror).
 |
 
-platform hopscotch core HopscotchWindow openSubject: (classUI ClassSubject onClassModel: (classUI ClassModel forClassDeclarationMirror: classUI classDeclarationMirror))
+platform hopscotch core HopscotchWindow 
+    openSubject: (ClassSubject onClassModel: classModelForBrowsedClass)   
 #+end_example
 
 * Debugging
@@ -55,14 +60,7 @@ platform hopscotch core HopscotchWindow openSubject: (classUI ClassSubject onCla
 ** Why is link on A1_SimpleIDEBrowser not followed? - it IS followed, but into the same window, so no changes are visible in the UI.
 
 public enclosingClassSubjects ^ <List[ClassSubject]> = (
-	(* Browsing>>ClassSubject has:.
-	public enclosingClassSubjects ^ <List[ClassSubject]> = (
-		| them = List new. c |
-		c:: classMirror.
-		[c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass].
-		^them
-	)    
-    *)
+	(* Browsing>>ClassSubject: Code from here. *)
 	| them = List new. c |
 	c:: classMirror.
 	[c isNil] whileFalse: [them add: (ClassSubject onDeclaration: c). c:: c enclosingClass].
@@ -71,3 +69,7 @@ public enclosingClassSubjects ^ <List[ClassSubject]> = (
 )
 
 because 'them' only contains 1 element A1_SimpleIDEBrowser. The link IS FOLLOWED BUT ENTERS THE SAME SUBJECT, WHICH CREATES THE SAME PRESENTER, SO EVERYTHING LOOKS THE SAME BUT IT IS ONE LEVEL DEEPER.
+
+
+** Adding detail for class browser
+

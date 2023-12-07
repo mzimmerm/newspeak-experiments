@@ -15,6 +15,7 @@ class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <Hopsco
     (* cheating imports of full classes from ide browsing instead of reimplementing them *)
 	ProgrammingPresenter = ide browsing ProgrammingPresenter.
     ProgrammingSubject =  ide browsing ProgrammingSubject.
+    DefinitionListPresenter = ide browsing DefinitionListPresenter.
 
 	Exception = platform kernel Exception.
     Color = platform graphics Color.
@@ -37,6 +38,14 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
           2. slots of those instances.
     *)
   	|
+    (* indented UIs instances must be first, the ClassSubject creation needs them! *)
+	factoryUI <FactoryUI> (* todo : this seems replaced with headingDefinition *)
+    (* todo: finish: nestedClassesUIs <List[ClassUI]> ::= nestedClassDeclarationMirrors collect: [:nestedClassDeclarationMirror | ClassUI forClass: nestedClassDeclarationMirror klass]. *)
+    nestedClassGroupUI <NestedClassGroupUI> = NestedClassGroupUI new.
+    instanceMethodGroupUI <MethodGroupUI>
+    classMethodGroupUI <MethodGroupUI>    
+
+
     (* Model defining slot for <ClassModel>. public for accesibility to pass to nested ClassModel factory *)
     public classDeclarationMirror = classOrClassDeclarationMirror isKindOfClass 
     	ifTrue: [(ClassMirror reflecting: classOrClassDeclarationMirror) mixin declaration]
@@ -57,16 +66,10 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
     (* Model defining slot for <MethodGroupModel> *)
     public nestedClassDeclarationMirrors ::= nestedClassesGroup do: [:nestedClassDeclarationMirror | nestedClassDeclarationMirror].
 
-    (* indented UIs *)
-	factoryUI <FactoryUI> (* todo : this seems replaced with headingDefinition *)
-    (* todo: finish: nestedClassesUIs <List[ClassUI]> ::= nestedClassDeclarationMirrors collect: [:nestedClassDeclarationMirror | ClassUI forClass: nestedClassDeclarationMirror klass]. *)
-    nestedClassGroupUI <NestedClassGroupUI>
-    instanceMethodGroupUI <MethodGroupUI>
-    classMethodGroupUI <MethodGroupUI>    
 	|
     ) (
 public class ClassModel forClassDeclarationMirror: cdm <ClassDeclarationMirror> = (
-	(* UI model for class presentation and editing, model base is ClassDeclarationMirror.
+	(* UI model for single class IDE; class defined by ClassDeclarationMirror.
         public for use in Workspace. 
     *)
 	|
@@ -120,10 +123,13 @@ public class ClassSubject onClassModel: model <ClassModel> = ProgrammingSubject 
 	)
 	*)
     
-	(*  ~Document>>Documents#ampletForClass:~ sends 'ClassSubject onClassModel: model <ClassModel>'. 
-       So keep it, and provide the 'standard signature' class method ClassSubject onModel <ClassModel>' 
+	(* Note: The 'standard name' for factory of ~ClassSubject~ should be ~ClassSubject onModel: model~.
+      But: Existing code ~Document>>Documents#ampletForClass:~ sends 'ClassSubject onClassModel: model <ClassModel>'. 
+       So use a 'non-standard name' for this factory, and provide the 'standard name' as a class method ~ClassSubject onModel: model~.
     *)
-    
+    |
+    nestedClassesSubject_slot  <NestedClassGroupSubject>
+    |
 ) (
 public createPresenter = (
 	^ ClassPresenter onSubject: self.
@@ -146,14 +152,6 @@ public classMirror ^ <ClassDeclarationMirror> = (
 )
 public isKindOfClassSubject ^ <Boolean> = (
   ^true
-)
-public isTestConfiguration = (
-	(* Send from ClassActionsPresenter *)
-  ^isTopLevel and: [
-	classMirror primaryFactorySelector = #packageTestsUsing: or: [
-		classMirror classSide methods includesMirrorNamed: #packageTestsUsing:
-		]
-	]
 )
 public isTopLevel = (
 	(* Send from ClassActionsPresenter *)
@@ -203,6 +201,34 @@ public enclosingClassSubjects ^ <List[ClassSubject]> = (
     (* mz log todo-remove 'start of enclosingClassSubjects them:' out. them do: [:classSubject | classSubject classMirror printString out]. 'end' out. *)
 	^them
 )
+public isTestConfiguration = (
+	(* Is sent from ClassActionsPresenter *)
+  ^isTopLevel and: [
+	classMirror primaryFactorySelector = #packageTestsUsing: or: [
+		classMirror classSide methods includesMirrorNamed: #packageTestsUsing:
+		]
+	]
+)
+public elements = (
+(* todo-00-last-last *)
+    ^ {}.
+)
+public nestedClassesSubject ^ <NestedClassGroupSubject> 
+(* Subject for group of nested classes. *)
+(* From Browsing>>ClassSubject#nestedClassesSubject. Removed exemplar: *)
+= (
+   (* If the slot supporting nestedClassesSubject is not set, create it, then return it *) 
+   nestedClassesSubject_slot isNil ifTrue: [
+     | 
+     nestedClassesModel <MirrorGroupModel> = 
+       (* MirrorGroupModel mirrorGroup: classMirror instanceSide ofMixin: classMirror instanceSide exemplar: exemplar. *)
+        nestedClassGroupUI NestedClassGroupModel mirrorGroup: classMirror instanceSide ofMixin: classMirror instanceSide.
+     nestedClassesSubject_tmp = nestedClassGroupUI NestedClassGroupSubject onModel: nestedClassesModel.
+     |
+	 nestedClassesSubject_slot:: nestedClassesSubject_tmp.
+    ].
+   ^nestedClassesSubject_slot
+)
 ) : (
 public onDeclaration: cd <ClassDeclarationMirror> ^ <Instance> = (
   (* Browsing>>ClassSubject has: ^onClassModel: (ClassModel declaration: cd exemplar: nil) *)
@@ -221,12 +247,15 @@ public class ClassPresenter onSubject: subject <ClassSubject> = ProgrammingPrese
 	  public nestedClassesPresenter <NestedClassGroupPresenter>
 	  public instanceMethodsPresenter <MethodGroupPresenter>
 	  public classMethodsPresenter <MethodGroupPresenter>
+      
 	  classActionsPresenter <ClassActionsPresenter>
 	  |
 	)
     *)
 	|
-	classActionsPresenter <ClassActionsPresenter> (* Presenter of the [deploy] [configurations] [run] [debug] fragment. *)
+	public nestedClassesPresenter <NestedClassGroupPresenter>
+    
+    classActionsPresenter <ClassActionsPresenter> (* Presenter of the [deploy] [configurations] [run] [debug] fragment. *)
     |
 ) (
 nestedClassesPresenters = (
@@ -300,37 +329,6 @@ headingDefinition ^ <Fragment> = (
         initiallyExpanded: initiallyExpanded. (* note: differs from Browsing>>ClassPresenter *)
 	}) color: (Color h: 240 s: 0.05 v: 0.9).
 )
-public definition ^ <Fragment>  = (
-	(* Fragment of ClassPresenter. *)
-
-    (* Browsing>>ClassPresenter#definition. :     
-    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
-	^column: {
-        helpSection.
-		headingDefinition.
-		lazySlotsPresenter:: subject lazySlotsSubject presenter.
-		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassUI) ui subject presenter
-		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassUI) ui subject presenter
-		classMethodsPresenter:: subject classMethodsSubject presenter.
-	}
-    *)
-
-	(* Prepare the presenter of the [deploy] [configurations] [run] [debug] fragment. Inserted into headingDefinition. *)
-    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
-    (* Column with help, heading (expanded or collapsed), then setting and inserting lazy slots, nested classes, etc. *)
-	^column: {
-        helpSection. (* Initially empty section above headingDefinition. It is filled after click on the "?" in headingDefinition *)
-		headingDefinition.
-        (*
-        row: {
-            	link: subject className action: [openOnNewPage].
-                filler.
-                dropDownMenu: [filePresenterMenu]
-                }
-        *)        
-	}
-
-)
 respondToSave = (
 	(* from Browsing>>ClassPresenter.
     	Call ~ide webFiles downloadFileName: CLASS_NAME fromString: SOURCE~
@@ -363,22 +361,52 @@ classNameAndHierarchySummary = (
 			(image: ide images classIcon)
                  height: styleButtonSize.
 			smallBlank.
-			row: parts.
+			row: parts. (* Class name links. Starts with subject model class, up to top level class, joined by 'in' *)
 			filler.
-            label: subject classCommentSummary. (* NOT in Browsing>>ClassPresenter. It is in Namespacing>>ClassEntryPresenter *)
+            label: subject classCommentSummary. (* Class comment. NOT in Browsing>>ClassPresenter. It is in Namespacing>>ClassEntryPresenter *)
             classActionsPresenter. (* Presenter of the [deploy] [configurations] [run] [debug] fragment. *)
 			smallBlank.
-			itemReferencesButtonWithAction: [browseSelector: subject name]. (* image and action for 'find class references/usages': action value calls: ~enterSubject: Browsing>>SelectorSubject onModel: class name~  which shows Browsing>>SelectorPresenter *)
+			itemReferencesButtonWithAction: [browseSelector: subject name]. (* Image and action for 'find class references/usages': action value calls: ~enterSubject: Browsing>>SelectorSubject onModel: class name~  which shows Browsing>>SelectorPresenter *)
 			smallBlank.
-			saveButtonWithAction: [respondToSave]. (* image and action for 'save class source': action value calls: ~ide webfiles downloadFileName: subject name fromString: subject compilationUnitSource=classMirror source~ *)
+			saveButtonWithAction: [respondToSave]. (* Image and action for 'save class source': action value calls: ~ide webfiles downloadFileName: subject name fromString: subject compilationUnitSource=classMirror source~ *)
 			smallBlank.
-			refreshButton.			 (* image and action for 'refresh shell': calls ~shell refresh~ *)
+			refreshButton.			 (* Image and action for 'refresh shell': calls ~shell refresh~ *)
 			smallBlank.
-            helpButton.               (* image and action for 'help': action value calls: ~helpHolder content: helpContents]) height: styleButtonSize~ which uses self helpText *)
+            helpButton.               (* Image and action for 'help': action value calls: ~helpHolder content: helpContents]) height: styleButtonSize~ which uses self helpText *)
 			smallBlank.
-			dropDownMenu: [classActionsMenu].  (* dropDownMenu with name->action map for 'save to file', 'inspect presenter', 'inspect mirror' and 'delete' of class: menu action value for 'inspect presenter' calls: ~ProgrammingPresente#respondToInspectPresenter~ ->  ~ProgrammingPresente#inspectObject: self=aClassPresenter~ -> ~enterSubject:: ObjectSubject onModel: (ObjectMirror reflecting: object)~ - Basically current presenter is replaced with ObjectPresentor on aClassPresenter=self=object on which the dropDownMenu is called!!! *)
+			dropDownMenu: [classActionsMenu].  (* Three-dot dropDownMenu with name->action map for 1) 'Save to File', 2) 'Inspect Mirror' 3)  'Inspect Presenter', 4) 'Delete' of class. Detail calls on menu action value for 'inspect presenter': ~ProgrammingPresenter#respondToInspectPresenter~ ->  ~ProgrammingPresente#inspectObject: self=aClassPresenter~ -> ~enterSubject:: ObjectSubject onModel: (ObjectMirror reflecting: object)~ - Basically current presenter is replaced with ObjectPresentor on aClassPresenter=self=object on which the dropDownMenu is called!!! *)
 		}
 	}
+)
+public definition ^ <Fragment>  = (
+	(* Fragment of ClassPresenter. *)
+
+    (* Browsing>>ClassPresenter#definition. :     
+    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
+	^column: {
+        helpSection.
+		headingDefinition.
+		lazySlotsPresenter:: subject lazySlotsSubject presenter.
+		nestedClassesPresenter:: subject nestedClassesSubject presenter. ### will be: nestedClassesGroupBrowser(slot on ClassUI) ui subject presenter
+		instanceMethodsPresenter:: subject methodsSubject presenter. ### will be: methodGroupBrowser(slot on ClassUI) ui subject presenter
+		classMethodsPresenter:: subject classMethodsSubject presenter.
+	}
+    *)
+
+	(* Prepare the presenter of the [deploy] [configurations] [run] [debug] fragment. Inserted into headingDefinition. *)
+    classActionsPresenter:: (ClassActionsPresenter onSubject: subject) elasticity: 1.
+    (* Column with help, heading (expanded or collapsed), then setting and inserting lazy slots, nested classes, etc. *)
+	^column: {
+        helpSection. (* Initially empty section above headingDefinition. It is filled after click on the "?" in headingDefinition *)
+		headingDefinition. (* Fragment for collapsed or expanded Class Factory method with slots. Collapsed shows ~classNameAndHierarchySummary~ Expanded shows ~expandedHeadingDefinition~ *)
+        
+        (* Note that the ~headingDefinition~ above shows different fragments for collapsed/expanded, but fragments for everything below are the same both in expanded/collapsed! *)
+        
+        (* todo-00-last-last : This is where the problem is *)
+        nestedClassesPresenter:: subject nestedClassesSubject presenter. (* prepare: nestedClassesGroupBrowser (slot on ClassUI) ui subject presenter *)
+       
+	}
+
 )
 ) : (
 )
@@ -513,8 +541,9 @@ public deployAction = (
 )
 public class MethodGroupUI new = (
  |
-    (* Only need Subject. Can get presenter and view from it *)
+    (* todo-00-last-last : removed : Only need Subject. Can get presenter and view from it 
     subject = MethodGroupSubject onModel: (MethodGroupModel new).
+    *)
 
 (* indented browsers *)
 (* none *)
@@ -551,27 +580,198 @@ public isKindOfMethodGroupPresenter = (
 )
 public class NestedClassGroupUI new = (
  |
-    (* Only need Subject. Can get presenter and view from it *)
+    (* Only need Subject. Can get presenter and view from it 
     subject = NestedClassGroupSubject onModel: (NestedClassGroupModel new).
+    *)
 
 (* indented browsers *)
 (* none *)
  |
 ) (
-class NestedClassGroupModel new = (
-
+public class NestedClassGroupModel mirrorGroup: ms <MirrorGroup> ofMixin: m = MirrorGroupModel mirrorGroup: ms ofMixin: m (
 ) (
 ) : (
 )
-class NestedClassGroupSubject onModel: m = Subject onModel: m (
-
+public class NestedClassGroupSubject onModel: m <MirrorGroupModel[ClassDeclarationMirror]> = MirrorGroupSubject onModel: m (
+(* Represents the collection of nested classes of a Newspeak class. Holds onto the mirror group for the classes. *)
 ) (
+public colorizeClassSource: source <String> editor: cm <CodeMirrorFragment> = (
+	^ide colorizer
+		colorizeClassDeclaration: source
+		fromClass: definingMixin declaration
+		via: (colorizingBlockFor: cm)
+)
+public isKindOfNestedClassGroupSubject ^ <Boolean> = (
+  ^true
+)
+public isMyKind: s <Subject> ^ <Boolean> = (
+  ^s isKindOfNestedClassGroupSubject
+)
+public createPresenter = (
+	^NestedClassGroupPresenter onSubject: self
+)
+public modelMirrorCollection ^<Collection[Mirror]> = (
+	^List withAll: definingMixin nestedClasses
+)
+elementSubjectClass ^ <ClassSubject class> = (
+	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
+	^ClassSubject
+)
+public elementFor: m <Mirror> = (
+	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
+	(* ^ClassModel declaration: m exemplar: nil enclosing: exemplar *)
+    ClassModel forClassDeclarationMirror: m.
+)
+public elementModelClass ^ <ClassModel class> = (
+	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
+    ^ ClassModel
+)
 ) : (
 )
-class NestedClassGroupPresenter onSubject: s = Presenter onSubject: s (
-
+public class NestedClassGroupPresenter onSubject: s = MirrorGroupPresenter onSubject: s (
+(* Presents the subject, a NestedClassGroupSubject, as a column of presenters for the nested classes in the group. Automatically gets updated after the subject mirror group. Anything that has to do with adding, editing or deleting NS nested classes goes here. *)
+break.
 ) (
+listDescription ^ <String> = (
+	(* Needed only for help. *)
+  ^'nested class'
+)
+public title = (
+	(* Used in HopscotchWindow#displayPresenter to show title - not sure where in UI *)
+  ^'Classes'
+)
+elementDescription ^ <String> = (
+	(* Used in Help only *)
+  ^'nested classes of the surrounding class'
+)
+public isKindOfNestedClassGroupPresenter ^ <Boolean> = (
+  ^true
+)
+isMyKind: other = (
+^ other isKindOfNestedClassGroupPresenter
+)
+elementPresenterClass ^ <ProgrammingPresenter class> = (
+	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
+	(* todo-00-last-last : original : ^ClassEntryPresenter *)
+    ^ ClassPresenter.
+)
 ) : (
+)
+) : (
+)
+public class MirrorGroupModel mirrorGroup: ms <MirrorGroup> ofMixin: m (*exemplar: e <ObjectMirror | Nil>*)
+(*
+Copied from Browsing>>MirrorGroupModel but exemplar removed. 
+Base model for 
+  1) NestedClassGroupModel (silent), serving NestedClassGroupSubject and NestedClassGroupPresenter
+  2) MethodGroupModel (silent), serving MethodGroupSubject and MethodGroupPresenter
+  
+Instances creation use case:
+
+Let's say we want to display nested classes for class MyClass. The group of (list of) the nested classes
+can be obtained as follows:
+  a) We create aMyClassDeclarationMirror for class MyClass as ~(ClassMirror reftecting: MyClass) mixin declaration.
+  b) We create aMirrorGroupModel (this class instance) as  ~MirrorGroupModel mirrorGroup: aMyClassDeclarationMirror instanceSide ofMixin: aMyClassDeclarationMirror instanceSide~
+  
+Note: The reason we pass 2 params is for reuse for NestedClassGroupModel (where aMyClassDeclarationMirror instanceSide is needed in both) and MethodGroupModel (where ~methods~ is part of the ofMixin: argument)
+*)
+ = (
+	|
+	public mirrorGroup <MixinModel> = ms. (* for NestedGroupModel, MixinMirror. Reason: Caller passes ~aClassModel=aClassDeclarationMirror instanceSide~ which is aMixinMirror. *)
+    public definingMixin = m. (* for NestedGroupModel, MixinMirror. Reason: As in ms above. *)
+    (*public exemplar <ObjectMirror | Nil> = e.*)
+	|
+    ) (
+public = other ^ <Boolean> = (
+	other isKindOfMirrorGroupModel ifFalse: [^false].
+    ^mirrorGroup = other mirrorGroup and: [definingMixin = other definingMixin (*and: [exemplar = other exemplar]*)].
+)
+public hash ^<Integer> = (
+	^(mirrorGroup hash bitXor: definingMixin hash) (* bitXor: exemplar hash *)
+)
+public isKindOfMirrorGroupModel ^ <Boolean>  = (
+  ^true
+)
+public isMyKind: other = (
+	^ other isKindOfMirrorGroupModel
+)
+) : (
+)
+public class MirrorGroupSubject onModel: m <MirrorGroupModel> = ProgrammingSubject onModel: m (
+	|
+    (* Slot with subjects, each subject is for one nested class. *)
+	elements_slot <Collection[Subject]>
+	|
+) (
+public mirrorGroup ^ <MirrorGroup> = (
+    (* model is a MixinMirror, so mirrorGroup can be sent to it. *)
+    break.
+	^model mirrorGroup
+)
+public isKindOfMirrorGroupSubject ^ <Boolean> = (
+  ^true
+)
+public definingMixin ^ <MixinMirror> = (^ model definingMixin)
+public elementFor: m <Mirror> = (
+	^subclassResponsibility
+)
+public elementSubjectClass = (
+	(* Answer the class of the subjects we create on individual elements of our subject group. *)
+	subclassResponsibility
+)
+public elements ^<Collection[Subject]> = (
+	(* Answer a collection of subjects on individual elements of the group which is our subject. *)
+    elements_slot isNil ifTrue: [
+    (* Original had fromModel: *)
+	 elements_slot::  modelMirrorCollection collect: [:each | elementSubjectClass onModel: (elementFor: each)].
+     ^elements_slot
+     ].
+     updateElements. 
+   ^elements_slot
+)
+public updateElements = (
+(* todo-00-last-last removed for now
+  |
+  subjectMirrors <List[Mirror]> = elements_slot collect: [:e <Subject> |
+    e model mirror
+  ].
+  obsoleteSubjects <List[Subject]> = List new.
+  |
+  elements_slot do: [:s <Subject> |
+    (modelMirrorCollection includes: s model mirror) ifFalse: [obsoleteSubjects add: s].
+  ].
+  obsoleteSubjects do: [:s <Subject> | elements_slot remove: s].
+  modelMirrorCollection do: [:m <Mirror> |
+    (subjectMirrors includes: m) ifFalse: [
+      elements_slot add: (elementSubjectClass fromModel: (elementFor: m))
+      ].
+  ].
+  *)
+)
+) : (
+)
+public class MirrorGroupPresenter onSubject: s <Subject> = DefinitionListPresenter onSubject: s (
+(* todo-00-last-last break. *)
+) (
+elementPresenterClass ^ <ProgrammingPresenter class> = (
+	(* A subclass must redefine this to define the class of presenter it will be using. *)
+	subclassResponsibility
+)
+createPresenterForSubject: aSubject <Subject> ^ <ProgrammingPresenter> = (
+	(* Let the subject create its default unless elementPresenterClass is set to specify our preference. *)
+	nil = elementPresenterClass ifTrue: [break. ^aSubject presenter].
+	^elementPresenterClass onSubject: aSubject
+)
+contentPresenters ^ <Collection[ProgrammingPresenter]> = (
+    (* alert: 'In MirrorGroupPresenter#contentPresenters subject=', subject printString, ' self=', self printString, ' self subject=', self subject printString. *)
+    (* todo-00-last-last subject here is ClassSubject, incorrect, WHY????????????????????? self subject is MirrorGroupSubject, correct, so use that. *)
+	^(self subject elements collect:
+		[:each <Subject> | createPresenterForSubject: each]) 
+        (* todo-00-last-last do NOT sort for now, as name in  p1 subject name not understood 
+        sort: [:p1 <ProgrammingPresenter> :p2 <ProgrammingPresenter> | 
+            lexicallyLessOrEqual: p1 subject name than: p2 subject name
+          ]
+          *)
 )
 ) : (
 )
