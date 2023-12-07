@@ -58,7 +58,7 @@ public class ClassUI forClassDefinedBy: classOrClassDeclarationMirror <Behavior|
         ].
   
     (* todo Only need Subject. Can get presenter and view from it *)
-    subject = ClassSubject onClassModel: (ClassModel forClassDeclarationMirror: classDeclarationMirror).
+    (* todo-00-last-last-removed : subject = ClassSubject onClassModel: (ClassModel forClassDeclarationMirror: classDeclarationMirror). *)
 
 	(* members used by multiple models in UI and it's nested classes *)
     
@@ -246,14 +246,6 @@ public compilationUnitSource ^ <String> = (
 	].
   ^classMirror source
 )
-public classCommentSummary ^ <String> = (
-	|
-	fullComment <String> = subject classCommentText.
-	endOfFirstSentence <Integer> = fullComment indexOf: '.'.
-	firstSentence <String> = fullComment copyFrom: 1 to: endOfFirstSentence.
-	|
-	^firstSentence
-)
 public classCommentText ^<String> = (
 	(* First sentence of class comment *)
 	| comment = classMirror header classComment. |
@@ -305,6 +297,14 @@ public accessModifier = (
 public classMirror ^ <ClassDeclarationMirror> = (
 	( 'model=', model printString ) out.
 	^model classMirror
+)
+public classCommentSummary ^ <String> = (
+	|
+	fullComment <String> = classCommentText.
+	endOfFirstSentence <Integer> = fullComment indexOf: '.'.
+	firstSentence <String> = fullComment copyFrom: 1 to: endOfFirstSentence.
+	|
+	^firstSentence
 )
 ) : (
 public onDeclaration: cd <ClassDeclarationMirror> ^ <Instance> = (
@@ -687,9 +687,6 @@ public isMyKind: s <Subject> ^ <Boolean> = (
 public createPresenter = (
 	^NestedClassGroupPresenter onSubject: self
 )
-public modelMirrorCollection ^<Collection[Mirror]> = (
-	^List withAll: definingMixin nestedClasses
-)
 elementSubjectClass ^ <ClassSubject class> = (
 	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
 	^ClassSubject
@@ -702,6 +699,9 @@ elementFor: m <Mirror> = (
 elementModelClass ^ <ClassModel class> = (
 	(* Each element is presented as ClassPresenter/ClassSubject/ClassModel - this needs to be returned here *)
     ^ ClassModel
+)
+public modelMirrorCollection ^<Collection[Mirror]> = (
+	^List withAll: definingMixin nestedClasses
 )
 ) : (
 )
@@ -747,8 +747,8 @@ Note: The reason we pass 2 params is for reuse for NestedClassGroupModel (where 
 *)
  = (
 	|
-	public mirrorGroup <MixinModel> = ms. (* for NestedGroupModel, MixinMirror. Reason: Caller passes ~aClassModel=aClassDeclarationMirror instanceSide~ which is aMixinMirror. *)
-    public definingMixin = m. (* for NestedGroupModel, MixinMirror. Reason: As in ms above. *)
+	public mirrorGroup <MixinModel> = ms. (* for NestedClassGroupModel, MixinMirror. Reason: Caller passes ~aClassModel=aClassDeclarationMirror instanceSide~ which is aMixinMirror. *)
+    public definingMixin = m. (* for NestedClassGroupModel, MixinMirror. Reason: As in ms above. *)
     (*public exemplar <ObjectMirror | Nil> = e.*)
 	|
     ) (
@@ -835,21 +835,21 @@ elementPresenterClass ^ <ProgrammingPresenter class> = (
 	(* A subclass must redefine this to define the class of presenter it will be using. *)
 	subclassResponsibility
 )
+createPresenterForSubject: aSubject <Subject> ^ <ProgrammingPresenter> = (
+	(* Let the subject create its default unless elementPresenterClass is set to specify our preference. *)
+	nil = elementPresenterClass ifTrue: [^aSubject presenter].
+	^elementPresenterClass onSubject: aSubject
+)
 contentPresenters ^ <Collection[ProgrammingPresenter]> = (
     (* alert: 'In MirrorGroupPresenter#contentPresenters subject=', subject printString, ' self=', self printString, ' self subject=', self subject printString. *)
     (* todo-00-last-last subject here is ClassSubject, incorrect, WHY????????????????????? self subject is MirrorGroupSubject, correct, so use that. *)
-	^(self subject elements collect:
+	^(subject elements collect:
 		[:each <Subject> | createPresenterForSubject: each]) 
         (* todo-00-last-last do NOT sort for now, as name in  p1 subject name not understood 
         sort: [:p1 <ProgrammingPresenter> :p2 <ProgrammingPresenter> | 
             lexicallyLessOrEqual: p1 subject name than: p2 subject name
           ]
           *)
-)
-createPresenterForSubject: aSubject <Subject> ^ <ProgrammingPresenter> = (
-	(* Let the subject create its default unless elementPresenterClass is set to specify our preference. *)
-	nil = elementPresenterClass ifTrue: [^aSubject presenter].
-	^elementPresenterClass onSubject: aSubject
 )
 ) : (
 )
