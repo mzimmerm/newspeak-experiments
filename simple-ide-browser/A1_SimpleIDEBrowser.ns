@@ -736,8 +736,13 @@ Note: The reason we pass 2 params is for reuse for NestedClassGroupModel (where 
 *)
  = (
 	|
-	public mirrorGroup <MixinModel> = ms. (* for NestedClassGroupModel, MixinMirror. Reason: Caller passes ~aClassModel=aClassDeclarationMirror instanceSide~ which is aMixinMirror. *)
-    public definingMixin = m. (* for NestedClassGroupModel, MixinMirror. Reason: As in ms above. *)
+	public mirrorGroup <MixinModel> = ms. (* for NestedClassGroupModel, MixinMirror of the 'thing' which owns this MirrorGroupModel. Reason: Caller passes ~aClassModel=aClassDeclarationMirror instanceSide~ which is aMixinMirror. *)
+    
+    (* Note: todo-00-last : The ~definingMixin~ is NOT the same as ~aClassDeclarationMirror definingMixin~. 
+          - This slot holds the MixinMirror ot the 'thing' which owns this group.
+          - The ~aClassDeclarationMirror definingMixin~ would hold a MixinMirror of the ENCLOSING instance of the aClassDeclarationMirror.
+    *)
+    public definingMixin = m. (* for NestedClassGroupModel, MixinMirror of the 'thing' which owns this MirrorGroupModel. Reason: As in ms above. *)
     (*public exemplar <ObjectMirror | Nil> = e.*)
 	|
     ) (
@@ -801,9 +806,6 @@ elementModelClass = (
 	(* Answer the class of the models we create for individual elements of our subject group. *)
 	subclassResponsibility
 )
-modelMirrorCollection ^<Collection[Mirror]> = (
-	^subclassResponsibility
-)
 elementFor: m <Mirror> = (
 	^subclassResponsibility
 )
@@ -814,6 +816,18 @@ elementSubjectClass = (
 public isKindOfMirrorGroupSubject ^ <Boolean> = (
 	break.
   ^true
+)
+modelMirrorCollection ^<Collection[Mirror]> = (
+	(* subclassResponsibility to obtain a list of mirrors that represent the group.
+    
+        Implementors should return a list of Mirrors representing this group.
+        The type of Mirrors in the list depends on what this MirrorGroupSubject represents (nested classes, methods, slots).
+        
+         - If this subject represents a Class's NestedClassGroup, mirrors of the Class's nested classes should be returned; could be obtained by ~model definingMixin nestedClasses~. 
+           - Note that ~model definingMixin = aClassDeclarationMirror (of the thing that owns this group)~, NOT aClassDeclarationMirror definingMixin!!!.
+         - If this subject represents a Class's MethodGroup,        mirrors of the Class's methods          should ge returned; could be obtainer by ~model definingMixin methods~
+    *)
+	^subclassResponsibility
 )
 ) : (
 )
