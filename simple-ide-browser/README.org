@@ -71,5 +71,11 @@ public enclosingClassSubjects ^ <List[ClassSubject]> = (
 because 'them' only contains 1 element A1_SimpleIDEBrowser. The link IS FOLLOWED BUT ENTERS THE SAME SUBJECT, WHICH CREATES THE SAME PRESENTER, SO EVERYTHING LOOKS THE SAME BUT IT IS ONE LEVEL DEEPER.
 
 
-** Adding detail for class browser
 
+
+* Simple IDE browser enhancements
+
+- Do this: (this is actually how classes are shown when there is no instance)
+  - In Simple IDE browser, always skip the enclosing instance.
+  - When class heading line expanded, show the same heading class again; below, nested, add the collapsed Factory Method line, e.g. 'usingPlatform:webIDE'.
+  - When the factory line is expanded, show the factorycode

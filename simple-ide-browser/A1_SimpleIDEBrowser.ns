@@ -6,7 +6,8 @@ class A1_SimpleIDEBrowser usingPlatform: platform <Platform> webIDE: ide <Hopsco
 	|
     (* imports *)
     List = platform collections List.    
-    Map = platform collections Map.    
+    Map = platform collections Map. 
+    Set = platform collections Set.
 	ClassMirror = platform mirrors ClassMirror.
     ObjectMirror = platform mirrors ObjectMirror.
 	Exception = platform kernel Exception.
@@ -147,13 +148,14 @@ public class ClassModel forClassDeclarationMirror: cdm <ClassDeclarationMirror> 
     private classDeclarationMirror <ClassDeclarationMirror> = cdm.
     |
     
-    (* Browsing version
+   	assert: [classDeclarationMirror isKindOfClassDeclarationMirror] message: 'ClassModel built upon another ClassModel?!'.
+   (* Browsing version
 		public class ClassModel declaration: cd <ClassDeclarationMirror> exemplar: e <ObjectMirror | Nil> enclosing: o <ObjectMirror | Nil>  
 		= (
 		|
 		public klass <ClassDeclarationMirror> = cd.
-        	public exemplar <ObjectMirror | Nil> ::= e.
-        	enclosing_slot <ObjectMirror | Nil> ::= e isNil ifTrue: [o].
+        public exemplar <ObjectMirror | Nil> ::= e.
+        enclosing_slot <ObjectMirror | Nil> ::= e isNil ifTrue: [o].
 		|
     	assert: [cd isKindOfClassDeclarationMirror] message: 'ClassModel built upon another ClassModel?!'.
 		)   
@@ -291,10 +293,6 @@ public nestedClassesSubject ^ <NestedClassGroupSubject>
 public accessModifier = (
 	^classMirror accessModifier
 )
-public classMirror ^ <ClassDeclarationMirror> = (
-	( 'model=', model printString ) out.
-	^model classMirror
-)
 public classCommentSummary ^ <String> = (
 	|
 	fullComment <String> = classCommentText.
@@ -302,6 +300,10 @@ public classCommentSummary ^ <String> = (
 	firstSentence <String> = fullComment copyFrom: 1 to: endOfFirstSentence.
 	|
 	^firstSentence
+)
+public classMirror ^ <ClassDeclarationMirror> = (
+	( 'model=', model printString ) out. (* todo-00-last remove *)
+	^model classMirror
 )
 ) : (
 public onDeclaration: cd <ClassDeclarationMirror> ^ <Instance> = (
@@ -344,9 +346,6 @@ public isKindOfClassPresenter = (
 )
 initiallyExpanded = (
 	^ false.
-)
-expandedHeadingDefinition = (
-^filler.
 )
 classNameAndContainmentDefinition ^ <Fragment> = (
 	^column: {
@@ -478,6 +477,14 @@ public definition ^ <Fragment>  = (
         nestedClassesPresenter:: subject nestedClassesSubject presenter. (* prepare: nestedClassesGroupBrowser (slot on ClassUI) ui subject presenter *)
 	}
 
+)
+expandedHeadingDefinition = (
+	(* todo-00-last-last : was: ^filler. *)
+  ^column: {
+      classNameAndHierarchySummary.
+      (ClassFactorySubject onModel: subject classMirror) presenter
+   }
+    
 )
 ) : (
 )
@@ -853,6 +860,68 @@ contentPresenters ^ <Collection[ProgrammingPresenter]> = (
           ]
           *)
 )
+) : (
+)
+public class MethodSubject onMethodModel: mm <MethodModel | ClassModel> = Subject onModel: mm (
+(* Browsing>>MethodSubject has this.:*)
+(* todo-00-last-last : copy from Browsing, but remove exapmplars *)
+| 
+public errorMessages <Set[String]> = Set new. 
+(*
+public exemplars <List[String]> = computeExemplars.  
+public exemplar <String>
+*)
+evaluator_slot <EvaluationSubject>
+workspace_slot <EvaluationSubject>
+public threadMap <Map[Symbol, ThreadMirror| Error]> = Map new.
+|
+) (
+) : (
+)
+public class ClassFactorySubject onClassModel: m <ClassModel> = MethodSubject onMethodModel: m (
+	(* Browsing>>ClassFactorySubject has this:. *)
+    (* todo-00-last-last : copy from Browsing . But this MUST BE PUBLIC, as it's up from user, ClassPresenter#expandedHeader or some such ?? *)
+) (
+public definition = (
+	^ filler.
+)
+public presenter = (
+	^ ClassFactoryPresenter onSubject: self.
+)
+) : (
+public onModel: m <ClassDeclarationMirror> = (
+	(* Provides the standard factory name. *)
+  (* ^onClassModel: (ClassModel declaration: m exemplar: nil ) *)
+    ^onClassModel: (ClassModel forClassDeclarationMirror: m )
+
+)
+)
+public class ClassFactoryPresenter onSubject: s <ClassFactorySubject> = MethodPresenter onSubject: s (
+(* Browsing>>ClassFactoryPresenter has:. *)
+(* todo-00-last-last : copy from Browsing *)
+(* Present the factory method, colorized. *)
+ | toggle <ToggleComposer>  public showClassName <Boolean> ::= false. |
+) (
+public definition = (
+	^ filler.
+)
+public isKindOfClassFactoryPresenter = (
+	^ true.
+)
+isMyKind: other <Fragment> ^ <Boolean> = (
+  ^ other isKindOfFactoryPresenter.
+)
+) : (
+)
+public class MethodPresenter onSubject: s <MethodSubject> = ProgrammingPresenter onSubject: s (
+	(* Browsing>>MethodPresenter has this:. *)
+    (* todo-00-last : copy from Browsing **)
+	(* A presenter for a single method. *)
+	|
+	public showClassName ::= false.
+    public mustBeExpanded ::= false.
+	|
+) (
 ) : (
 )
 ) : (

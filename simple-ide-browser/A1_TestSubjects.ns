@@ -8,6 +8,9 @@ public class Nested1 = (
 	nested1Slot1
 	|
 ) (
+instanceMethod1_on_Nested1 = (
+	^'instanceMethod1_on_Nested1'
+)
 ) : (
 )
 public class Nested2 = (
@@ -15,7 +18,22 @@ public class Nested2 = (
 	nested2Slot1
 	|
 ) (
-) : (
+instanceMethod1_on_Nested2 = (
+	^'instanceMethod1_on_Nested2'
 )
 ) : (
+)
+instanceMethod3_on_A1_TestSubjects= (
+	^'instanceMethod3_on_A1_TestSubjects'
+)
+instanceMethod2_on_A1_TestSubjects= (
+	^'instanceMethod2_on_A1_TestSubjects'
+)
+instanceMethod1_on_A1_TestSubjects= (
+	^'instanceMethod1_on_A1_TestSubjects'
+)
+) : (
+classMethod1_on_A1_TestSubjects= (
+	^'classMethod1_on_A1_TestSubjects'
+)
 )
