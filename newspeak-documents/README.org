@@ -1,0 +1,46 @@
+* About this Newspeak experiment
+
+Project for Newspeak Ampleforth document experiments
+
+* HTML creates by IDE -> Root + -> Create new document
+
+#+begin_src html
+<body><div class="self_ampleforth" contenteditable="true" style="border: 2px solid blue; resize: horizontal; overflow: auto; overflow-wrap: break-word; width: 40em;" onkeyup="updateRawHTML()" ondragover="((e) => {e.preventDefault();})(event)" ondrop="((e) => {
+              e.preventDefault();
+            // Calculate the drop position within the text
+            const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+            // Create a new text node to separate the image from the surrounding text
+            const textNode = document.createTextNode('\u00A0'); // Non-breaking space
+            // Insert the text node at the calculated position
+            range.insertNode(textNode);
+            // Loop through dropped files
+            for (const file of e.dataTransfer.files) {
+                if (file.type.startsWith('image/')) {
+                     // The downside here is that image data ends up in the HTML file. The file is thus self contained, but bloated.
+                    // This does not scale well. An alternative is to create an in-memory URL for the file, like so:
+                    //const imageUrl = window.URL.createObjectURL(file);
+                    // Then, rather than creating a File Reader etc., we can just set the image element src field to the URL we created:
+                    // imageElement.src = imageURL
+                    // The problem here is that the URL will not persist beyond the lifetime of the dynamic document, so saving the HTML
+                    // yields a broken reference - the URL is not valid anymore.
+                    // So we would need to convert the URL to something permanent when saving the document - say copying its data into 
+                    // a zip file that contained both the HTML and its dependencies. When loading, we'd need to revise the image URLs
+                    // to new ones created from the zip data.
+                    const imageElement = document.createElement('img');
+                    imageElement.style.maxWidth = '300px';
+                    //imageElement.style.maxHeight = '100px';
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        imageElement.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                    // Insert the image after the text node
+                    textNode.after(imageElement);
+                }
+            }
+  })(event)"> <!-- self_ampleforth -->
+  <h1>This is a document with an image.</h1><div>Image has been dragged from Linux file manager to here:&nbsp;</div><div><br></div>    <script>
+
+        const textContainer = document.querySelector('p');
+</div></div></script></div></body>
+#+end_src
